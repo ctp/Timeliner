@@ -2,8 +2,6 @@
 //  TimelinerApp.swift
 //  Timeliner
 //
-//  Created by Chris Parker on 1/25/26.
-//
 
 import SwiftUI
 import SwiftData
@@ -12,15 +10,15 @@ import UniformTypeIdentifiers
 @main
 struct TimelinerApp: App {
     var body: some Scene {
-        DocumentGroup(editing: .itemDocument, migrationPlan: TimelinerMigrationPlan.self) {
+        DocumentGroup(editing: .timelinerDocument, migrationPlan: TimelinerMigrationPlan.self) {
             ContentView()
         }
     }
 }
 
 extension UTType {
-    static var itemDocument: UTType {
-        UTType(importedAs: "com.example.item-document")
+    static var timelinerDocument: UTType {
+        UTType(importedAs: "com.timeliner.document")
     }
 }
 
@@ -29,15 +27,15 @@ struct TimelinerMigrationPlan: SchemaMigrationPlan {
         TimelinerVersionedSchema.self,
     ]
 
-    static var stages: [MigrationStage] = [
-        // Stages of migration between VersionedSchema, if required.
-    ]
+    static var stages: [MigrationStage] = []
 }
 
 struct TimelinerVersionedSchema: VersionedSchema {
     static var versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] = [
-        Item.self,
+        TimelineEvent.self,
+        Lane.self,
+        Tag.self,
     ]
 }

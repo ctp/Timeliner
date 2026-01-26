@@ -8,13 +8,13 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
-			<string>Default</string>
+			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.example.item-document</string>
+				<string>com.timeliner.document</string>
 			</array>
 			<key>NSUbiquitousDocumentUserActivityType</key>
-			<string>$(PRODUCT_BUNDLE_IDENTIFIER).exampledocument</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).timeliner</string>
 		</dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
@@ -25,14 +25,14 @@
 				<string>com.apple.package</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Example Document</string>
+			<string>Timeliner Document</string>
 			<key>UTTypeIdentifier</key>
-			<string>com.example.item-document</string>
+			<string>com.timeliner.document</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>exampledocument</string>
+					<string>timeliner</string>
 				</array>
 			</dict>
 		</dict>
