@@ -32,6 +32,11 @@ struct ContentView: View {
     }
 
     private func addSampleData() {
+        // Check if sample data already exists
+        let laneDescriptor = FetchDescriptor<Lane>()
+        let existingLanes = (try? modelContext.fetch(laneDescriptor)) ?? []
+        guard existingLanes.isEmpty else { return }
+
         // Create sample lanes
         let workLane = Lane(name: "Work", color: "#3498DB", sortOrder: 0)
         let personalLane = Lane(name: "Personal", color: "#E74C3C", sortOrder: 1)
