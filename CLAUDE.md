@@ -1,0 +1,146 @@
+# CLAUDE.md - Timeliner Project Guide
+
+## Project Overview
+
+Timeliner is a macOS Catalyst timeline visualization app built with SwiftUI and SwiftData. Users create `.timeliner` documents containing events organized into lanes (horizontal tracks) and tagged for filtering.
+
+## Tech Stack
+
+- **Swift 6** with strict concurrency
+- **SwiftUI** for UI
+- **SwiftData** for persistence (document-based via `DocumentGroup`)
+- **Swift Testing** framework for unit tests (not XCTest)
+
+## Architecture
+
+### Data Model
+
+| Model | Purpose |
+|-------|---------|
+| `FlexibleDate` | Variable-precision date (year-only through minute-level) stored as Codable struct |
+| `TimelineEvent` | Main entity with title, description, start/end dates, lane, and tags |
+| `Lane` | Visual grouping track (horizontal row) with name, color, sortOrder |
+| `Tag` | Cross-cutting labels for filtering events |
+
+**Key design decisions:**
+- `FlexibleDate` is stored as JSON-encoded `Data` in `TimelineEvent` (SwiftData doesn't directly support custom structs)
+- Relationships: Lane → Events (one-to-many), Tag ↔ Events (many-to-many)
+- Events without a lane appear in an "Unassigned" section
+
+### Document Structure
+
+Documents use `.timeliner` extension and are packages (folders that appear as single files):
+```
+MyTimeline.timeliner/
+├── default.store          # SwiftData SQLite database
+└── (future: Attachments/) # Reserved for media
+```
+
+UTType: `com.timeliner.document`
+
+### View Hierarchy
+
+```
+ContentView
+├── NavigationSplitView
+│   ├── Sidebar (List)
+│   │   ├── LaneListView    # CRUD for lanes
+│   │   └── TagListView     # CRUD for tags with filter toggles
+│   └── Detail
+│       └── TimelineCanvasView
+│           ├── TimeAxisView      # Time ruler with adaptive ticks
+│           ├── LaneRowView[]     # One per lane
+│           │   └── EventView[]   # Point (dot) or span (bar)
+│           └── Gesture handlers  # Pan and zoom
+```
+
+### Coordinate System
+
+`TimelineViewport` manages the mapping between dates and screen positions:
+- `centerDate`: Date at viewport center
+- `scale`: Seconds per point (higher = more zoomed out)
+- `xPosition(for: Date)` / `date(forX: CGFloat)`: Bidirectional conversion
+
+## File Locations
+
+```
+Timeliner/
+├── Models/
+│   ├── FlexibleDate.swift
+│   ├── TimelineEvent.swift
+│   ├── Lane.swift
+│   └── Tag.swift
+├── Views/
+│   ├── TimelineViewport.swift
+│   ├── TimelineCanvasView.swift
+│   ├── TimeAxisView.swift
+│   ├── EventView.swift
+│   ├── LaneRowView.swift
+│   └── Sidebar/
+│       ├── LaneListView.swift
+│       └── TagListView.swift
+├── ContentView.swift
+├── TimelinerApp.swift
+└── Info.plist
+```
+
+## Running Tests
+
+```bash
+# All unit tests
+xcodebuild test -scheme Timeliner -destination 'platform=macOS' -only-testing:TimelinerTests
+
+# Specific test file
+xcodebuild test -scheme Timeliner -destination 'platform=macOS' -only-testing:TimelinerTests/FlexibleDateTests
+```
+
+**Note:** SourceKit may show false "No such module 'Testing'" errors in the IDE. These are indexing issues—tests compile and run correctly.
+
+## Build Commands
+
+```bash
+cd /Users/ctp/Desktop/Local\ Sources/Timeliner
+
+# Build
+xcodebuild build -scheme Timeliner -destination 'platform=macOS'
+
+# Run app
+open ~/Library/Developer/Xcode/DerivedData/Timeliner-*/Build/Products/Debug/Timeliner.app
+```
+
+## Current State (v1 Complete)
+
+Implemented:
+- ✅ Core data model with FlexibleDate precision
+- ✅ Document persistence with .timeliner extension
+- ✅ Horizontal timeline visualization
+- ✅ Stacked lane rows
+- ✅ Point events (dots) and span events (bars)
+- ✅ Pan (drag) and zoom (pinch) navigation
+- ✅ Adaptive time axis (hours → decades)
+- ✅ Sidebar for lane/tag management
+- ✅ Sample data generation (idempotent)
+
+## Future Work (Out of Scope for v1)
+
+These were explicitly deferred but the model accommodates them:
+
+1. **Event Editing UI** - Currently no way to add/edit events beyond sample data
+2. **Attachments** - Images, files, links (Attachments/ directory reserved in doc package)
+3. **Event Relationships** - Links between events (causal, sequential)
+4. **Vertical Orientation** - Alternative timeline layout
+5. **Collapsible Lanes** - Expand/collapse for focus
+6. **Minimap** - Overview navigation for large timelines
+7. **Tag Filtering** - `activeTagFilters` state exists but isn't wired to filter displayed events
+8. **Lane Color Picker** - Currently hardcoded; needs UI for user selection
+9. **Search** - Find events by title/description
+
+## Design Documents
+
+- `docs/plans/2026-01-26-timeline-core-design.md` - Approved design spec
+- `docs/plans/2026-01-26-timeline-implementation.md` - Implementation plan with 13 tasks
+
+## Git Remote
+
+- Origin: `git@github.com:ctp/Timeliner.git`
+- Branch: `main`
