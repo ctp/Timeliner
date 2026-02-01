@@ -11,6 +11,7 @@ struct EventView: View {
     let viewport: TimelineViewport
     let isSelected: Bool
     let onSelect: () -> Void
+    var rowHeight: CGFloat = 40
 
     private let eventHeight: CGFloat = 24
 
@@ -41,7 +42,7 @@ struct EventView: View {
                     .frame(width: 16, height: 16)
             }
         }
-        .position(x: x, y: eventHeight / 2)
+        .position(x: x, y: rowHeight / 2)
     }
 
     private var spanEventView: some View {
@@ -64,7 +65,7 @@ struct EventView: View {
                 alignment: .leading
             )
             .frame(width: width, height: eventHeight)
-            .position(x: startX + width / 2, y: eventHeight / 2)
+            .position(x: startX + width / 2, y: rowHeight / 2)
     }
 
     private var eventColor: Color {

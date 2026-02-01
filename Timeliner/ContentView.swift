@@ -9,6 +9,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var activeTagFilters: Set<UUID> = []
+    @State private var fitToContent = false
 
     var body: some View {
         NavigationSplitView {
@@ -27,7 +28,14 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView()
+            TimelineCanvasView(fitToContent: $fitToContent)
+        }
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button(action: { fitToContent = true }) {
+                    Label("Fit to Content", systemImage: "arrow.left.and.right.square")
+                }
+            }
         }
     }
 
@@ -93,6 +101,8 @@ struct ContentView: View {
         modelContext.insert(event1)
         modelContext.insert(event2)
         modelContext.insert(birthday)
+
+        fitToContent = true
     }
 }
 
