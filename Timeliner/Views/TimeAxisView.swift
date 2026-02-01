@@ -70,12 +70,14 @@ struct TimeAxisView: View {
     }
 
     private func tickInterval(for scale: TimeInterval) -> TickInterval {
+        // Thresholds chosen so each tick interval produces ~50-200px spacing.
+        // Pixel spacing ≈ intervalSeconds / scale.
         switch scale {
-        case ..<3600: return .hour
-        case ..<86400: return .day
-        case ..<604800: return .week
-        case ..<2592000: return .month
-        case ..<31536000: return .year
+        case ..<60: return .hour       // hour ticks ≥60px apart
+        case ..<3000: return .day      // day ticks ≥29px apart
+        case ..<15000: return .week    // week ticks ≥40px apart
+        case ..<100000: return .month  // month ticks ≥26px apart
+        case ..<1000000: return .year  // year ticks ≥32px apart
         default: return .decade
         }
     }
@@ -129,7 +131,12 @@ struct TimeAxisView: View {
         let formatter = DateFormatter()
         switch interval {
         case .hour:
-            formatter.dateFormat = "HH:mm"
+            let hour = Calendar.current.component(.hour, from: date)
+            if hour == 0 {
+                formatter.dateFormat = "MMM d"
+            } else {
+                formatter.dateFormat = "HH:mm"
+            }
         case .day, .week:
             formatter.dateFormat = "MMM d"
         case .month:

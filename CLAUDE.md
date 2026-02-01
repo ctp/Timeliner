@@ -17,13 +17,14 @@ Timeliner is a macOS Catalyst timeline visualization app built with SwiftUI and 
 
 | Model | Purpose |
 |-------|---------|
-| `FlexibleDate` | Variable-precision date (year-only through minute-level) stored as Codable struct |
+| `FlexibleDate` | Variable-precision date (year-only through minute-level) with timezone-aware storage |
 | `TimelineEvent` | Main entity with title, description, start/end dates, lane, and tags |
 | `Lane` | Visual grouping track (horizontal row) with name, color, sortOrder |
 | `Tag` | Cross-cutting labels for filtering events |
 
 **Key design decisions:**
 - `FlexibleDate` is stored as JSON-encoded `Data` in `TimelineEvent` (SwiftData doesn't directly support custom structs)
+- `FlexibleDate` timezone convention: day-precision and coarser store raw calendar values (no timezone); time-precision (hour/minute) stores UTC internally. Use `fromLocalTime(...)` to create time-precision dates and `localDisplayComponents` to read them back in local time.
 - Relationships: Lane → Events (one-to-many), Tag ↔ Events (many-to-many)
 - Events without a lane appear in an "Unassigned" section
 
@@ -118,7 +119,8 @@ Implemented:
 - ✅ Point events (dots) and span events (bars)
 - ✅ Pan (drag) and zoom (pinch) navigation
 - ✅ Fit-to-content viewport scaling (auto-fits on sample data load, toolbar button for manual trigger)
-- ✅ Adaptive time axis (hours → decades)
+- ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds
+- ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
 - ✅ Sidebar for lane/tag management
 - ✅ Hover popovers on events showing styled event details (title, description, dates, tags)
 - ✅ Sample data generation (idempotent)

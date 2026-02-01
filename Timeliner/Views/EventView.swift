@@ -131,11 +131,9 @@ struct EventView: View {
             let d = date.day ?? 1
             return String(format: "%04d-%02d-%02d", date.year, m, d)
         case .time:
-            let m = date.month ?? 1
-            let d = date.day ?? 1
-            let h = date.hour ?? 0
-            let min = date.minute ?? 0
-            return String(format: "%04d-%02d-%02d %02d:%02d", date.year, m, d, h, min)
+            let local = date.localDisplayComponents
+            return String(format: "%04d-%02d-%02d %02d:%02d",
+                          local.year, local.month, local.day, local.hour, local.minute)
         }
     }
 
