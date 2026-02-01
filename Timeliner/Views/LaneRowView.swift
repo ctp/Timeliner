@@ -30,39 +30,49 @@ struct LaneRowView: View {
 
             // Connection lines (behind events)
             Path { path in
-                let r: CGFloat = 8
-
                 // Horizontal track lines per sub-row
                 for segment in lines.tracks {
                     path.move(to: segment.from)
                     path.addLine(to: segment.to)
                 }
 
-                // Curved fork/merge connectors
+                // S-curve fork/merge connectors
                 for fm in lines.forkMerges {
-                    let dy = fm.subRowY - fm.row0Y
-                    let cr = min(r, abs(dy) / 2)
+                    let dy = abs(fm.subRowY - fm.row0Y)
+                    let spread = min(40, dy)
 
                     if fm.isFork {
-                        // Fork: curve from main track down to sub-row
-                        path.move(to: CGPoint(x: fm.x, y: fm.row0Y))
-                        path.addLine(to: CGPoint(x: fm.x, y: fm.subRowY - cr))
-                        path.addQuadCurve(
-                            to: CGPoint(x: fm.x + cr, y: fm.subRowY),
-                            control: CGPoint(x: fm.x, y: fm.subRowY)
+                        // S-curve from main track down to sub-row
+                        path.move(to: CGPoint(x: fm.x - spread, y: fm.row0Y))
+                        path.addCurve(
+                            to: CGPoint(x: fm.x, y: fm.subRowY),
+                            control1: CGPoint(x: fm.x, y: fm.row0Y),
+                            control2: CGPoint(x: fm.x - spread, y: fm.subRowY)
                         )
                     } else {
-                        // Merge: curve from sub-row back up to main track
-                        path.move(to: CGPoint(x: fm.x - cr, y: fm.subRowY))
-                        path.addQuadCurve(
-                            to: CGPoint(x: fm.x, y: fm.subRowY - cr),
-                            control: CGPoint(x: fm.x, y: fm.subRowY)
+                        // S-curve from sub-row back up to main track
+                        path.move(to: CGPoint(x: fm.x, y: fm.subRowY))
+                        path.addCurve(
+                            to: CGPoint(x: fm.x + spread, y: fm.row0Y),
+                            control1: CGPoint(x: fm.x + spread, y: fm.subRowY),
+                            control2: CGPoint(x: fm.x, y: fm.row0Y)
                         )
-                        path.addLine(to: CGPoint(x: fm.x, y: fm.row0Y))
                     }
                 }
             }
             .stroke(laneStrokeColor, lineWidth: 3)
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .black, location: 0.15),
+                        .init(color: .black, location: 0.85),
+                        .init(color: .clear, location: 1),
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
 
             // Lane label
             Text(lane.name)

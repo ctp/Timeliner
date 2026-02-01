@@ -31,8 +31,11 @@ struct TimelineCanvasView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                // Time axis
+                // Time axis (pan and zoom gestures live here)
                 TimeAxisView(viewport: viewportWithWidth(geometry.size.width))
+                    .gesture(panGesture(width: geometry.size.width))
+                    .gesture(magnificationGesture)
+                    .contentShape(Rectangle())
 
                 Divider()
 
@@ -57,8 +60,6 @@ struct TimelineCanvasView: View {
                     }
                 }
             }
-            .gesture(panGesture(width: geometry.size.width))
-            .gesture(magnificationGesture)
             .onAppear {
                 viewport.viewportWidth = geometry.size.width
             }
@@ -110,35 +111,45 @@ struct TimelineCanvasView: View {
 
             // Connection lines
             Path { path in
-                let r: CGFloat = 8
-
                 for segment in lines.tracks {
                     path.move(to: segment.from)
                     path.addLine(to: segment.to)
                 }
 
                 for fm in lines.forkMerges {
-                    let dy = fm.subRowY - fm.row0Y
-                    let cr = min(r, abs(dy) / 2)
+                    let dy = abs(fm.subRowY - fm.row0Y)
+                    let spread = min(40, dy)
 
                     if fm.isFork {
-                        path.move(to: CGPoint(x: fm.x, y: fm.row0Y))
-                        path.addLine(to: CGPoint(x: fm.x, y: fm.subRowY - cr))
-                        path.addQuadCurve(
-                            to: CGPoint(x: fm.x + cr, y: fm.subRowY),
-                            control: CGPoint(x: fm.x, y: fm.subRowY)
+                        path.move(to: CGPoint(x: fm.x - spread, y: fm.row0Y))
+                        path.addCurve(
+                            to: CGPoint(x: fm.x, y: fm.subRowY),
+                            control1: CGPoint(x: fm.x, y: fm.row0Y),
+                            control2: CGPoint(x: fm.x - spread, y: fm.subRowY)
                         )
                     } else {
-                        path.move(to: CGPoint(x: fm.x - cr, y: fm.subRowY))
-                        path.addQuadCurve(
-                            to: CGPoint(x: fm.x, y: fm.subRowY - cr),
-                            control: CGPoint(x: fm.x, y: fm.subRowY)
+                        path.move(to: CGPoint(x: fm.x, y: fm.subRowY))
+                        path.addCurve(
+                            to: CGPoint(x: fm.x + spread, y: fm.row0Y),
+                            control1: CGPoint(x: fm.x + spread, y: fm.subRowY),
+                            control2: CGPoint(x: fm.x, y: fm.row0Y)
                         )
-                        path.addLine(to: CGPoint(x: fm.x, y: fm.row0Y))
                     }
                 }
             }
             .stroke(Color.gray, lineWidth: 3)
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .black, location: 0.15),
+                        .init(color: .black, location: 0.85),
+                        .init(color: .clear, location: 1),
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
 
             Text("Unassigned")
                 .font(.caption)

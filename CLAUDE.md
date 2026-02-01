@@ -117,8 +117,8 @@ Implemented:
 - ✅ Horizontal timeline visualization
 - ✅ Stacked lane rows with automatic overlap detection (events that overlap in time are stacked vertically, lanes expand dynamically; point events are laid out above spans)
 - ✅ Point events (dots with outline) and span events (bars with outline and tinted lane-color fill)
-- ✅ Git-style connection lines: railroad-track graph with 3pt lane-colored lines, curved fork/merge connectors with quadratic bezier corners
-- ✅ Pan (drag) and zoom (pinch) navigation with viewport clamping (max 1 year beyond event bounds)
+- ✅ Git-style connection lines: railroad-track graph with 3pt lane-colored lines, S-curve fork/merge connectors, gradient fade at viewport edges
+- ✅ Pan (drag on time axis) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); lane area reserved for future event dragging
 - ✅ Fit-to-content viewport scaling (auto-fits on document load via async task, toolbar button, and View menu item with ⌘0)
 - ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
