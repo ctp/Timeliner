@@ -11,11 +11,17 @@ struct EventView: View {
     let viewport: TimelineViewport
     let isSelected: Bool
     let onSelect: () -> Void
+    var subRow: Int = 0
     var rowHeight: CGFloat = 40
 
     @State private var isHovered = false
 
     private let eventHeight: CGFloat = 24
+    private let baseRowHeight: CGFloat = 40
+
+    private var yCenter: CGFloat {
+        baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
+    }
 
     var body: some View {
         if event.isPointEvent {
@@ -56,7 +62,7 @@ struct EventView: View {
                 }
             }
         )
-        .position(x: x, y: rowHeight / 2)
+        .position(x: x, y: yCenter)
     }
 
     private var spanEventView: some View {
@@ -81,7 +87,7 @@ struct EventView: View {
                 )
                 .frame(width: width, height: eventHeight)
         )
-        .position(x: startX + width / 2, y: rowHeight / 2)
+        .position(x: startX + width / 2, y: yCenter)
     }
 
     private var tooltipView: some View {

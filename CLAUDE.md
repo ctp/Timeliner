@@ -49,9 +49,9 @@ ContentView
 │   └── Detail
 │       └── TimelineCanvasView
 │           ├── TimeAxisView      # Time ruler with adaptive ticks
-│           ├── LaneRowView[]     # One per lane
-│           │   └── EventView[]   # Point (dot) or span (bar)
-│           └── Gesture handlers  # Pan and zoom
+│           ├── LaneRowView[]     # One per lane, dynamic height via overlap layout
+│           │   └── EventView[]   # Point (dot) or span (bar), with hover popovers
+│           └── Gesture handlers  # Pan and zoom, fit-to-content
 ```
 
 ### Coordinate System
@@ -114,11 +114,13 @@ Implemented:
 - ✅ Core data model with FlexibleDate precision
 - ✅ Document persistence with .timeliner extension
 - ✅ Horizontal timeline visualization
-- ✅ Stacked lane rows
+- ✅ Stacked lane rows with automatic overlap detection (events that overlap in time are stacked vertically, lanes expand dynamically)
 - ✅ Point events (dots) and span events (bars)
 - ✅ Pan (drag) and zoom (pinch) navigation
+- ✅ Fit-to-content viewport scaling (auto-fits on sample data load, toolbar button for manual trigger)
 - ✅ Adaptive time axis (hours → decades)
 - ✅ Sidebar for lane/tag management
+- ✅ Hover popovers on events showing styled event details (title, description, dates, tags)
 - ✅ Sample data generation (idempotent)
 
 ## Future Work (Out of Scope for v1)

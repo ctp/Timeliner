@@ -85,7 +85,11 @@ struct TimelineCanvasView: View {
     }
 
     private func unassignedLaneView(width: CGFloat) -> some View {
-        ZStack(alignment: .leading) {
+        let layout = layoutEvents(eventsWithoutLane, viewport: viewportWithWidth(width))
+        let baseRowHeight: CGFloat = 40
+        let totalHeight = baseRowHeight * CGFloat(max(layout.totalRows, 1))
+
+        return ZStack(alignment: .leading) {
             Rectangle()
                 .fill(Color.gray.opacity(0.05))
 
@@ -93,17 +97,55 @@ struct TimelineCanvasView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.leading, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.top, 4)
 
-            ForEach(eventsWithoutLane, id: \.id) { event in
+            ForEach(layout.layout, id: \.event.id) { item in
                 EventView(
-                    event: event,
+                    event: item.event,
                     viewport: viewportWithWidth(width),
-                    isSelected: event.id == selectedEventID,
-                    onSelect: { selectedEventID = event.id }
+                    isSelected: item.event.id == selectedEventID,
+                    onSelect: { selectedEventID = item.event.id },
+                    subRow: item.subRow,
+                    rowHeight: totalHeight
                 )
             }
         }
-        .frame(height: 40)
+        .frame(height: totalHeight)
+    }
+
+    private func layoutEvents(_ events: [TimelineEvent], viewport: TimelineViewport) -> (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int) {
+        let sorted = events.sorted { $0.startDate.asDate < $1.startDate.asDate }
+        var assignments: [(event: TimelineEvent, subRow: Int)] = []
+        var rowEndPositions: [CGFloat] = []
+
+        for event in sorted {
+            let startX = viewport.xPosition(for: event.startDate.asDate)
+            var endX: CGFloat
+            if let end = event.endDate {
+                endX = viewport.xPosition(for: end.asDate)
+            } else {
+                endX = startX + 16
+            }
+            endX = max(endX, startX + 20)
+
+            var assigned = false
+            for i in 0..<rowEndPositions.count {
+                if startX >= rowEndPositions[i] {
+                    assignments.append((event: event, subRow: i))
+                    rowEndPositions[i] = endX
+                    assigned = true
+                    break
+                }
+            }
+
+            if !assigned {
+                assignments.append((event: event, subRow: rowEndPositions.count))
+                rowEndPositions.append(endX)
+            }
+        }
+
+        return (layout: assignments, totalRows: max(rowEndPositions.count, 1))
     }
 
     private func fitViewportToContent(width: CGFloat) {
