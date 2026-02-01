@@ -124,7 +124,7 @@ Implemented:
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
 - ✅ Sidebar for lane/tag management
 - ✅ Hover popovers on events showing styled event details (title, description, dates, tags)
-- ✅ Sample data generation (idempotent)
+- ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans, point events, and Important/Milestone tags
 
 ## Future Work (Out of Scope for v1)
 
