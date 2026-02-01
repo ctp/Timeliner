@@ -13,35 +13,49 @@ struct EventView: View {
     let onSelect: () -> Void
     var rowHeight: CGFloat = 40
 
+    @State private var isHovered = false
+
     private let eventHeight: CGFloat = 24
 
     var body: some View {
-        Group {
-            if event.isPointEvent {
-                pointEventView
-            } else {
-                spanEventView
+        if event.isPointEvent {
+            pointEventView
+        } else {
+            spanEventView
+        }
+    }
+
+    private func eventInteractions<V: View>(_ content: V) -> some View {
+        content
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovered = hovering
             }
-        }
-        .onTapGesture {
-            onSelect()
-        }
+            .popover(isPresented: $isHovered, arrowEdge: .bottom) {
+                tooltipView
+                    .padding(8)
+            }
+            .onTapGesture {
+                onSelect()
+            }
     }
 
     private var pointEventView: some View {
         let x = viewport.xPosition(for: event.startDate.asDate)
 
-        return ZStack {
-            Circle()
-                .fill(eventColor)
-                .frame(width: 12, height: 12)
-
-            if isSelected {
+        return eventInteractions(
+            ZStack {
                 Circle()
-                    .strokeBorder(Color.accentColor, lineWidth: 2)
-                    .frame(width: 16, height: 16)
+                    .fill(eventColor)
+                    .frame(width: 12, height: 12)
+
+                if isSelected {
+                    Circle()
+                        .strokeBorder(Color.accentColor, lineWidth: 2)
+                        .frame(width: 16, height: 16)
+                }
             }
-        }
+        )
         .position(x: x, y: rowHeight / 2)
     }
 
@@ -50,22 +64,73 @@ struct EventView: View {
         let endX = event.endDate.map { viewport.xPosition(for: $0.asDate) } ?? startX
         let width = max(endX - startX, 20) // Minimum width for visibility
 
-        return RoundedRectangle(cornerRadius: 4)
-            .fill(eventColor)
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-            )
-            .overlay(
-                Text(event.title)
-                    .font(.caption)
-                    .lineLimit(1)
-                    .padding(.horizontal, 4)
-                    .foregroundColor(.white),
-                alignment: .leading
-            )
-            .frame(width: width, height: eventHeight)
-            .position(x: startX + width / 2, y: rowHeight / 2)
+        return eventInteractions(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(eventColor)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                )
+                .overlay(
+                    Text(event.title)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .padding(.horizontal, 4)
+                        .foregroundColor(.white),
+                    alignment: .leading
+                )
+                .frame(width: width, height: eventHeight)
+        )
+        .position(x: startX + width / 2, y: rowHeight / 2)
+    }
+
+    private var tooltipView: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(event.title)
+                .font(.headline)
+
+            if let desc = event.eventDescription, !desc.isEmpty {
+                Text(desc)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            if event.isPointEvent {
+                Text("**Date:** \(formatted(event.startDate))")
+            } else {
+                Text("**Start:** \(formatted(event.startDate))")
+            }
+
+            if let end = event.endDate {
+                Text("**End:** \(formatted(end))")
+            }
+
+            if !event.tags.isEmpty {
+                let tagNames = event.tags.map(\.name).joined(separator: ", ")
+                Text("**Tags:** \(tagNames)")
+            }
+        }
+        .font(.callout)
+    }
+
+    private func formatted(_ date: FlexibleDate) -> String {
+        switch date.precision {
+        case .year:
+            return "\(date.year)"
+        case .month:
+            let m = date.month ?? 1
+            return String(format: "%04d-%02d", date.year, m)
+        case .day:
+            let m = date.month ?? 1
+            let d = date.day ?? 1
+            return String(format: "%04d-%02d-%02d", date.year, m, d)
+        case .time:
+            let m = date.month ?? 1
+            let d = date.day ?? 1
+            let h = date.hour ?? 0
+            let min = date.minute ?? 0
+            return String(format: "%04d-%02d-%02d %02d:%02d", date.year, m, d, h, min)
+        }
     }
 
     private var eventColor: Color {
