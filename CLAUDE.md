@@ -118,7 +118,7 @@ Implemented:
 - ✅ Stacked lane rows with automatic overlap detection (events that overlap in time are stacked vertically, lanes expand dynamically; point events are laid out above spans)
 - ✅ Point events (dots) and span events (bars)
 - ✅ Pan (drag) and zoom (pinch) navigation with viewport clamping (max 1 year beyond event bounds)
-- ✅ Fit-to-content viewport scaling (auto-fits on sample data load, toolbar button for manual trigger)
+- ✅ Fit-to-content viewport scaling (auto-fits on document load via async task, toolbar button for manual trigger)
 - ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
 - ✅ Sidebar for lane/tag management

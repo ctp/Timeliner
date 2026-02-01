@@ -17,6 +17,7 @@ struct TimelineCanvasView: View {
     @State private var selectedEventID: UUID?
     @State private var isDragging = false
     @State private var dragStartCenter: Date?
+    @State private var hasAutoFitted = false
 
     init(fitToContent: Binding<Bool>) {
         _fitToContent = fitToContent
@@ -60,6 +61,18 @@ struct TimelineCanvasView: View {
             .gesture(magnificationGesture)
             .onAppear {
                 viewport.viewportWidth = geometry.size.width
+            }
+            .task {
+                // Wait for SwiftData to finish loading events before auto-fitting
+                while allEvents.isEmpty {
+                    try? await Task.sleep(for: .milliseconds(50))
+                }
+                if !hasAutoFitted {
+                    // Allow a final settle for any remaining batch loads
+                    try? await Task.sleep(for: .milliseconds(100))
+                    fitToContent = true
+                    hasAutoFitted = true
+                }
             }
             .onChange(of: geometry.size.width) { _, newWidth in
                 viewport.viewportWidth = newWidth
