@@ -13,6 +13,23 @@ struct TimelinerApp: App {
         DocumentGroup(editing: .timelinerDocument, migrationPlan: TimelinerMigrationPlan.self) {
             ContentView()
         }
+        .commands {
+            TimelineCommands()
+        }
+    }
+}
+
+struct TimelineCommands: Commands {
+    @FocusedBinding(\.fitToContent) private var fitToContent
+
+    var body: some Commands {
+        CommandGroup(after: .toolbar) {
+            Button("Fit to Content") {
+                fitToContent = true
+            }
+            .keyboardShortcut("0", modifiers: .command)
+            .disabled(fitToContent == nil)
+        }
     }
 }
 

@@ -6,6 +6,17 @@
 import SwiftUI
 import SwiftData
 
+struct FitToContentKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
+extension FocusedValues {
+    var fitToContent: Binding<Bool>? {
+        get { self[FitToContentKey.self] }
+        set { self[FitToContentKey.self] = newValue }
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var activeTagFilters: Set<UUID> = []
@@ -37,6 +48,7 @@ struct ContentView: View {
                 }
             }
         }
+        .focusedSceneValue(\.fitToContent, $fitToContent)
     }
 
     private func addSampleData() {

@@ -98,13 +98,47 @@ struct TimelineCanvasView: View {
     }
 
     private func unassignedLaneView(width: CGFloat) -> some View {
-        let layout = layoutEvents(eventsWithoutLane, viewport: viewportWithWidth(width))
+        let vp = viewportWithWidth(width)
+        let layout = layoutEvents(eventsWithoutLane, viewport: vp)
         let baseRowHeight: CGFloat = 40
         let totalHeight = baseRowHeight * CGFloat(max(layout.totalRows, 1))
+        let lines = computeConnectionLines(layout: layout.layout, viewport: vp, baseRowHeight: baseRowHeight)
 
         return ZStack(alignment: .leading) {
             Rectangle()
                 .fill(Color.gray.opacity(0.05))
+
+            // Connection lines
+            Path { path in
+                let r: CGFloat = 8
+
+                for segment in lines.tracks {
+                    path.move(to: segment.from)
+                    path.addLine(to: segment.to)
+                }
+
+                for fm in lines.forkMerges {
+                    let dy = fm.subRowY - fm.row0Y
+                    let cr = min(r, abs(dy) / 2)
+
+                    if fm.isFork {
+                        path.move(to: CGPoint(x: fm.x, y: fm.row0Y))
+                        path.addLine(to: CGPoint(x: fm.x, y: fm.subRowY - cr))
+                        path.addQuadCurve(
+                            to: CGPoint(x: fm.x + cr, y: fm.subRowY),
+                            control: CGPoint(x: fm.x, y: fm.subRowY)
+                        )
+                    } else {
+                        path.move(to: CGPoint(x: fm.x - cr, y: fm.subRowY))
+                        path.addQuadCurve(
+                            to: CGPoint(x: fm.x, y: fm.subRowY - cr),
+                            control: CGPoint(x: fm.x, y: fm.subRowY)
+                        )
+                        path.addLine(to: CGPoint(x: fm.x, y: fm.row0Y))
+                    }
+                }
+            }
+            .stroke(Color.gray, lineWidth: 3)
 
             Text("Unassigned")
                 .font(.caption)
@@ -116,7 +150,7 @@ struct TimelineCanvasView: View {
             ForEach(layout.layout, id: \.event.id) { item in
                 EventView(
                     event: item.event,
-                    viewport: viewportWithWidth(width),
+                    viewport: vp,
                     isSelected: item.event.id == selectedEventID,
                     onSelect: { selectedEventID = item.event.id },
                     subRow: item.subRow,
@@ -162,6 +196,76 @@ struct TimelineCanvasView: View {
         }
 
         return (layout: assignments, totalRows: max(rowEndPositions.count, 1))
+    }
+
+    private struct LineSegment {
+        let from: CGPoint
+        let to: CGPoint
+    }
+
+    private struct ForkMerge {
+        let x: CGFloat
+        let row0Y: CGFloat
+        let subRowY: CGFloat
+        let isFork: Bool
+    }
+
+    private struct ConnectionLines {
+        let tracks: [LineSegment]
+        let forkMerges: [ForkMerge]
+    }
+
+    private func eventXRange(for event: TimelineEvent, viewport vp: TimelineViewport) -> (startX: CGFloat, endX: CGFloat) {
+        let startX = vp.xPosition(for: event.startDate.asDate)
+        var endX: CGFloat
+        if let end = event.endDate {
+            endX = vp.xPosition(for: end.asDate)
+        } else {
+            endX = startX + 16
+        }
+        endX = max(endX, startX + 20)
+        return (startX, endX)
+    }
+
+    private func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)], viewport vp: TimelineViewport, baseRowHeight: CGFloat) -> ConnectionLines {
+        guard !layout.isEmpty else { return ConnectionLines(tracks: [], forkMerges: []) }
+
+        let sorted = layout.sorted { $0.event.startDate.asDate < $1.event.startDate.asDate }
+
+        var subRowRanges: [Int: (minX: CGFloat, maxX: CGFloat)] = [:]
+        for item in sorted {
+            let range = eventXRange(for: item.event, viewport: vp)
+            if let existing = subRowRanges[item.subRow] {
+                subRowRanges[item.subRow] = (
+                    minX: min(existing.minX, range.startX),
+                    maxX: max(existing.maxX, range.endX)
+                )
+            } else {
+                subRowRanges[item.subRow] = (minX: range.startX, maxX: range.endX)
+            }
+        }
+
+        var tracks: [LineSegment] = []
+        for (subRow, range) in subRowRanges {
+            let y = baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
+            if subRow == 0 {
+                tracks.append(LineSegment(from: CGPoint(x: 0, y: y),
+                                          to: CGPoint(x: vp.viewportWidth, y: y)))
+            } else {
+                tracks.append(LineSegment(from: CGPoint(x: range.minX, y: y),
+                                          to: CGPoint(x: range.maxX, y: y)))
+            }
+        }
+
+        let row0Y = baseRowHeight / 2
+        var forkMerges: [ForkMerge] = []
+        for (subRow, range) in subRowRanges where subRow != 0 {
+            let subRowY = baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
+            forkMerges.append(ForkMerge(x: range.minX, row0Y: row0Y, subRowY: subRowY, isFork: true))
+            forkMerges.append(ForkMerge(x: range.maxX, row0Y: row0Y, subRowY: subRowY, isFork: false))
+        }
+
+        return ConnectionLines(tracks: tracks, forkMerges: forkMerges)
     }
 
     /// Returns the earliest start and latest end across all events, or nil if empty.
