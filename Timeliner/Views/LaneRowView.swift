@@ -52,11 +52,14 @@ struct LaneRowView: View {
     }
 
     private func layoutEvents(_ events: [TimelineEvent], viewport: TimelineViewport) -> (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int) {
-        let sorted = events.sorted { $0.startDate.asDate < $1.startDate.asDate }
+        // Point events first (top rows), then span events below
+        let points = events.filter { $0.endDate == nil }.sorted { $0.startDate.asDate < $1.startDate.asDate }
+        let spans = events.filter { $0.endDate != nil }.sorted { $0.startDate.asDate < $1.startDate.asDate }
+
         var assignments: [(event: TimelineEvent, subRow: Int)] = []
         var rowEndPositions: [CGFloat] = []
 
-        for event in sorted {
+        for event in points + spans {
             let startX = viewport.xPosition(for: event.startDate.asDate)
             var endX: CGFloat
             if let end = event.endDate {
