@@ -99,14 +99,13 @@ struct LaneRowView: View {
     }
 
     private func layoutEvents(_ events: [TimelineEvent], viewport: TimelineViewport) -> (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int) {
-        // Point events first (top rows), then span events below
         let points = events.filter { $0.endDate == nil }.sorted { $0.startDate.asDate < $1.startDate.asDate }
         let spans = events.filter { $0.endDate != nil }.sorted { $0.startDate.asDate < $1.startDate.asDate }
 
         var assignments: [(event: TimelineEvent, subRow: Int)] = []
-        var rowEndPositions: [CGFloat] = []
+        var rowIntervals: [[(startX: CGFloat, endX: CGFloat)]] = [[]] // row 0 always exists
 
-        for event in points + spans {
+        func eventXInterval(_ event: TimelineEvent) -> (startX: CGFloat, endX: CGFloat) {
             let startX = viewport.xPosition(for: event.startDate.asDate)
             var endX: CGFloat
             if let end = event.endDate {
@@ -114,25 +113,45 @@ struct LaneRowView: View {
             } else {
                 endX = startX + 16
             }
-            endX = max(endX, startX + 20) // match minimum visible width
+            endX = max(endX, startX + 20)
+            return (startX, endX)
+        }
 
+        func collides(_ interval: (startX: CGFloat, endX: CGFloat), inRow row: Int) -> Bool {
+            for existing in rowIntervals[row] {
+                if interval.startX < existing.endX && interval.endX > existing.startX {
+                    return true
+                }
+            }
+            return false
+        }
+
+        // Point events always go in row 0
+        for event in points {
+            let interval = eventXInterval(event)
+            assignments.append((event: event, subRow: 0))
+            rowIntervals[0].append(interval)
+        }
+
+        // Spans use first-fit packing, checking actual collisions per row
+        for event in spans {
+            let interval = eventXInterval(event)
             var assigned = false
-            for i in 0..<rowEndPositions.count {
-                if startX >= rowEndPositions[i] {
+            for i in 0..<rowIntervals.count {
+                if !collides(interval, inRow: i) {
                     assignments.append((event: event, subRow: i))
-                    rowEndPositions[i] = endX
+                    rowIntervals[i].append(interval)
                     assigned = true
                     break
                 }
             }
-
             if !assigned {
-                assignments.append((event: event, subRow: rowEndPositions.count))
-                rowEndPositions.append(endX)
+                assignments.append((event: event, subRow: rowIntervals.count))
+                rowIntervals.append([interval])
             }
         }
 
-        return (layout: assignments, totalRows: max(rowEndPositions.count, 1))
+        return (layout: assignments, totalRows: max(rowIntervals.count, 1))
     }
 
     private struct LineSegment {

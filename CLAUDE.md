@@ -115,7 +115,7 @@ Implemented:
 - ✅ Core data model with FlexibleDate precision
 - ✅ Document persistence with .timeliner extension
 - ✅ Horizontal timeline visualization
-- ✅ Stacked lane rows with automatic overlap detection (events that overlap in time are stacked vertically, lanes expand dynamically; point events are laid out above spans)
+- ✅ Stacked lane rows with interval-collision layout (spans pack into the first sub-row with no actual overlap; point events always occupy row 0, spans only bump down on real collisions; lanes expand dynamically)
 - ✅ Point events (dots with outline) and span events (bars with outline and tinted lane-color fill)
 - ✅ Git-style connection lines: railroad-track graph with 3pt lane-colored lines, S-curve fork/merge connectors, gradient fade at viewport edges
 - ✅ Pan (drag on time axis) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); lane area reserved for future event dragging
