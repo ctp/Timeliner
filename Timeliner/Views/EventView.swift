@@ -52,7 +52,8 @@ struct EventView: View {
         return eventInteractions(
             ZStack {
                 Circle()
-                    .fill(eventColor)
+                    .fill(Color.clear)
+                    .strokeBorder(eventColor, lineWidth: 2)
                     .frame(width: 12, height: 12)
 
                 if isSelected {
@@ -72,10 +73,10 @@ struct EventView: View {
 
         return eventInteractions(
             RoundedRectangle(cornerRadius: 4)
-                .fill(eventColor)
+                .fill(Color.clear)
                 .overlay(
                     RoundedRectangle(cornerRadius: 4)
-                        .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                        .strokeBorder(isSelected ? Color.accentColor : eventColor, lineWidth: 2)
                 )
                 .overlay(
                     Text(event.title)
