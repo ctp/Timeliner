@@ -14,6 +14,7 @@ struct EventView: View {
     var subRow: Int = 0
     var rowHeight: CGFloat = 40
     var labelPosition: LabelPosition = .none
+    var labelXOffset: CGFloat = 0
     var yOffset: CGFloat = 0
 
     @State private var isHovered = false
@@ -79,6 +80,7 @@ struct EventView: View {
                 let dotEdge = yCenter + (isAbove ? -6 : 6)
                 let lineEnd = dotEdge + (isAbove ? -connectorLength : connectorLength)
                 let textY = lineEnd + (isAbove ? -6 : 6)
+                let labelX = x + labelXOffset
 
                 // Connector line
                 Path { path in
@@ -93,7 +95,7 @@ struct EventView: View {
                     .foregroundColor(eventColor)
                     .lineLimit(1)
                     .fixedSize()
-                    .position(x: x, y: textY)
+                    .position(x: labelX, y: textY)
             }
         }
     }

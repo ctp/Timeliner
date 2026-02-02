@@ -21,7 +21,9 @@ struct LaneRowView: View {
 
     var body: some View {
         let layout = eventLayout
-        let labelPositions = showPointLabels ? computeLabelPositions(layout: layout) : [:]
+        let labelResult = showPointLabels ? computeLabelPositions(layout: layout) : (positions: [:], offsets: [:])
+        let labelPositions = labelResult.positions
+        let labelOffsets = labelResult.offsets
         let maxAboveTier = labelPositions.values.filter(\.isAbove).map(\.tier).max()
         let maxBelowTier = labelPositions.values.filter(\.isBelow).map(\.tier).max()
         let topPadding: CGFloat = maxAboveTier != nil
@@ -103,6 +105,7 @@ struct LaneRowView: View {
                     subRow: item.subRow,
                     rowHeight: totalHeight,
                     labelPosition: labelPositions[item.event.id] ?? .none,
+                    labelXOffset: labelOffsets[item.event.id] ?? 0,
                     yOffset: topPadding
                 )
             }
@@ -200,18 +203,19 @@ struct LaneRowView: View {
         return (startX, endX)
     }
 
-    private func computeLabelPositions(layout: (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int)) -> [UUID: LabelPosition] {
+    private func computeLabelPositions(layout: (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int)) -> (positions: [UUID: LabelPosition], offsets: [UUID: CGFloat]) {
         let points = layout.layout.filter { $0.event.isPointEvent }
             .sorted { $0.event.startDate.asDate < $1.event.startDate.asDate }
 
-        guard !points.isEmpty else { return [:] }
+        guard !points.isEmpty else { return ([:], [:]) }
 
         var positions: [UUID: LabelPosition] = [:]
         let charWidth: CGFloat = 7
         let labelPadding: CGFloat = 8
+        let connectorPadding: CGFloat = 4
         let maxAbove = LabelPosition.maxAboveTiers
 
-        // Track occupied x-ranges per tier: aboveTiers[0] = closest to dot, [1] = further, etc.
+        // ── Pass 1: assign tiers using label-to-label collision only ──
         var aboveTiers: [[(startX: CGFloat, endX: CGFloat)]] = Array(repeating: [], count: maxAbove)
         var belowTiers: [[(startX: CGFloat, endX: CGFloat)]] = Array(repeating: [], count: 2)
 
@@ -228,7 +232,6 @@ struct LaneRowView: View {
 
             var placed = false
 
-            // Try above tiers first (bias above)
             for tier in 0..<maxAbove {
                 if !collidesInTier(aboveTiers[tier], start: labelStart, end: labelEnd) {
                     positions[item.event.id] = .above(tier: tier)
@@ -238,7 +241,6 @@ struct LaneRowView: View {
                 }
             }
 
-            // Fall back to below tiers
             if !placed {
                 for tier in 0..<belowTiers.count {
                     if !collidesInTier(belowTiers[tier], start: labelStart, end: labelEnd) {
@@ -250,14 +252,99 @@ struct LaneRowView: View {
                 }
             }
 
-            // Last resort: add to highest above tier
             if !placed {
                 positions[item.event.id] = .above(tier: maxAbove - 1)
                 aboveTiers[maxAbove - 1].append((startX: labelStart, endX: labelEnd))
             }
         }
 
-        return positions
+        // ── Pass 2: compute offsets to avoid connector lines ──
+        // Collect all connector x-positions with their tier reach
+        struct PlacedLabel {
+            let id: UUID
+            let x: CGFloat
+            let tier: Int
+            let isAbove: Bool
+            let labelStart: CGFloat
+            let labelEnd: CGFloat
+        }
+
+        var placed: [PlacedLabel] = []
+        for item in points {
+            guard let pos = positions[item.event.id] else { continue }
+            let x = viewport.xPosition(for: item.event.startDate.asDate)
+            let titleWidth = CGFloat(item.event.title.count) * charWidth
+            let halfWidth = (titleWidth + labelPadding) / 2
+            placed.append(PlacedLabel(
+                id: item.event.id, x: x, tier: pos.tier, isAbove: pos.isAbove,
+                labelStart: x - halfWidth, labelEnd: x + halfWidth
+            ))
+        }
+
+        var offsets: [UUID: CGFloat] = [:]
+
+        for label in placed {
+            // Find connectors passing through this label's tier
+            // A connector at x from a label at tier T passes through tiers 0..<T
+            let conflicting: [(startX: CGFloat, endX: CGFloat)]
+            if label.isAbove {
+                conflicting = placed.compactMap { other in
+                    guard other.id != label.id && other.isAbove && other.tier > label.tier else { return nil }
+                    let connStart = other.x - connectorPadding
+                    let connEnd = other.x + connectorPadding
+                    guard label.labelStart < connEnd && label.labelEnd > connStart else { return nil }
+                    return (startX: connStart, endX: connEnd)
+                }
+            } else {
+                conflicting = placed.compactMap { other in
+                    guard other.id != label.id && !other.isAbove && other.tier > label.tier else { return nil }
+                    let connStart = other.x - connectorPadding
+                    let connEnd = other.x + connectorPadding
+                    guard label.labelStart < connEnd && label.labelEnd > connStart else { return nil }
+                    return (startX: connStart, endX: connEnd)
+                }
+            }
+
+            guard !conflicting.isEmpty else { continue }
+
+            // Get other labels in the same tier (for collision avoidance after shifting)
+            let sameTierLabels: [(startX: CGFloat, endX: CGFloat)]
+            if label.isAbove {
+                sameTierLabels = placed.compactMap { other in
+                    guard other.id != label.id && other.isAbove && other.tier == label.tier else { return nil }
+                    let otherOffset = offsets[other.id] ?? 0
+                    return (startX: other.labelStart + otherOffset, endX: other.labelEnd + otherOffset)
+                }
+            } else {
+                sameTierLabels = placed.compactMap { other in
+                    guard other.id != label.id && !other.isAbove && other.tier == label.tier else { return nil }
+                    let otherOffset = offsets[other.id] ?? 0
+                    return (startX: other.labelStart + otherOffset, endX: other.labelEnd + otherOffset)
+                }
+            }
+
+            // Try shifting right
+            let rightEdge = conflicting.map(\.endX).max()!
+            let rightOffset = rightEdge - label.labelStart
+            let rStart = label.labelStart + rightOffset
+            let rEnd = label.labelEnd + rightOffset
+            let rightFits = !collidesInTier(sameTierLabels, start: rStart, end: rEnd)
+
+            // Try shifting left
+            let leftEdge = conflicting.map(\.startX).min()!
+            let leftOffset = label.labelEnd - leftEdge
+            let lStart = label.labelStart - leftOffset
+            let lEnd = label.labelEnd - leftOffset
+            let leftFits = !collidesInTier(sameTierLabels, start: lStart, end: lEnd)
+
+            if rightFits && (!leftFits || rightOffset <= leftOffset) {
+                offsets[label.id] = rightOffset
+            } else if leftFits {
+                offsets[label.id] = -leftOffset
+            }
+        }
+
+        return (positions, offsets)
     }
 
     private func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)], yOffset: CGFloat = 0) -> ConnectionLines {
