@@ -54,7 +54,7 @@ struct ContentView: View {
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 Button(action: { fitToContent = true }) {
-                    Label("Fit to Content", systemImage: "arrow.left.and.right.square")
+                    Label("Fit to Content", systemImage: "arrow.left.and.line.vertical.and.arrow.right")
                 }
             }
         }
