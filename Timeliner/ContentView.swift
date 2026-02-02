@@ -10,10 +10,19 @@ struct FitToContentKey: FocusedValueKey {
     typealias Value = Binding<Bool>
 }
 
+struct ShowPointLabelsKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
 extension FocusedValues {
     var fitToContent: Binding<Bool>? {
         get { self[FitToContentKey.self] }
         set { self[FitToContentKey.self] = newValue }
+    }
+
+    var showPointLabels: Binding<Bool>? {
+        get { self[ShowPointLabelsKey.self] }
+        set { self[ShowPointLabelsKey.self] = newValue }
     }
 }
 
@@ -21,6 +30,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var activeTagFilters: Set<UUID> = []
     @State private var fitToContent = false
+    @State private var showPointLabels = false
 
     var body: some View {
         NavigationSplitView {
@@ -39,7 +49,7 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -49,6 +59,7 @@ struct ContentView: View {
             }
         }
         .focusedSceneValue(\.fitToContent, $fitToContent)
+        .focusedSceneValue(\.showPointLabels, $showPointLabels)
     }
 
     private func addSampleData() {

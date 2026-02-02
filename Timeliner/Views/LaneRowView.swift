@@ -9,6 +9,7 @@ import SwiftData
 struct LaneRowView: View {
     let lane: Lane
     let viewport: TimelineViewport
+    let showPointLabels: Bool
     let selectedEventID: UUID?
     let onSelectEvent: (TimelineEvent) -> Void
 
@@ -20,8 +21,18 @@ struct LaneRowView: View {
 
     var body: some View {
         let layout = eventLayout
-        let totalHeight = baseRowHeight * CGFloat(max(layout.totalRows, 1))
-        let lines = computeConnectionLines(layout: layout.layout)
+        let labelPositions = showPointLabels ? computeLabelPositions(layout: layout) : [:]
+        let maxAboveTier = labelPositions.values.filter(\.isAbove).map(\.tier).max()
+        let maxBelowTier = labelPositions.values.filter(\.isBelow).map(\.tier).max()
+        let topPadding: CGFloat = maxAboveTier != nil
+            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxAboveTier! + 1)
+            : 0
+        let bottomPadding: CGFloat = maxBelowTier != nil
+            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxBelowTier! + 1)
+            : 0
+        let laneContentHeight = baseRowHeight * CGFloat(max(layout.totalRows, 1))
+        let totalHeight = topPadding + laneContentHeight + bottomPadding
+        let lines = computeConnectionLines(layout: layout.layout, yOffset: topPadding)
 
         ZStack(alignment: .leading) {
             // Background
@@ -90,7 +101,9 @@ struct LaneRowView: View {
                     isSelected: item.event.id == selectedEventID,
                     onSelect: { onSelectEvent(item.event) },
                     subRow: item.subRow,
-                    rowHeight: totalHeight
+                    rowHeight: totalHeight,
+                    labelPosition: labelPositions[item.event.id] ?? .none,
+                    yOffset: topPadding
                 )
             }
         }
@@ -171,8 +184,8 @@ struct LaneRowView: View {
         let forkMerges: [ForkMerge]
     }
 
-    private func yCenter(forSubRow subRow: Int) -> CGFloat {
-        baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
+    private func yCenter(forSubRow subRow: Int, yOffset: CGFloat = 0) -> CGFloat {
+        yOffset + baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
     }
 
     private func eventXRange(for event: TimelineEvent) -> (startX: CGFloat, endX: CGFloat) {
@@ -187,7 +200,67 @@ struct LaneRowView: View {
         return (startX, endX)
     }
 
-    private func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)]) -> ConnectionLines {
+    private func computeLabelPositions(layout: (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int)) -> [UUID: LabelPosition] {
+        let points = layout.layout.filter { $0.event.isPointEvent }
+            .sorted { $0.event.startDate.asDate < $1.event.startDate.asDate }
+
+        guard !points.isEmpty else { return [:] }
+
+        var positions: [UUID: LabelPosition] = [:]
+        let charWidth: CGFloat = 7
+        let labelPadding: CGFloat = 8
+        let maxAbove = LabelPosition.maxAboveTiers
+
+        // Track occupied x-ranges per tier: aboveTiers[0] = closest to dot, [1] = further, etc.
+        var aboveTiers: [[(startX: CGFloat, endX: CGFloat)]] = Array(repeating: [], count: maxAbove)
+        var belowTiers: [[(startX: CGFloat, endX: CGFloat)]] = Array(repeating: [], count: 2)
+
+        func collidesInTier(_ intervals: [(startX: CGFloat, endX: CGFloat)], start: CGFloat, end: CGFloat) -> Bool {
+            intervals.contains { start < $0.endX && end > $0.startX }
+        }
+
+        for item in points {
+            let x = viewport.xPosition(for: item.event.startDate.asDate)
+            let titleWidth = CGFloat(item.event.title.count) * charWidth
+            let halfWidth = (titleWidth + labelPadding) / 2
+            let labelStart = x - halfWidth
+            let labelEnd = x + halfWidth
+
+            var placed = false
+
+            // Try above tiers first (bias above)
+            for tier in 0..<maxAbove {
+                if !collidesInTier(aboveTiers[tier], start: labelStart, end: labelEnd) {
+                    positions[item.event.id] = .above(tier: tier)
+                    aboveTiers[tier].append((startX: labelStart, endX: labelEnd))
+                    placed = true
+                    break
+                }
+            }
+
+            // Fall back to below tiers
+            if !placed {
+                for tier in 0..<belowTiers.count {
+                    if !collidesInTier(belowTiers[tier], start: labelStart, end: labelEnd) {
+                        positions[item.event.id] = .below(tier: tier)
+                        belowTiers[tier].append((startX: labelStart, endX: labelEnd))
+                        placed = true
+                        break
+                    }
+                }
+            }
+
+            // Last resort: add to highest above tier
+            if !placed {
+                positions[item.event.id] = .above(tier: maxAbove - 1)
+                aboveTiers[maxAbove - 1].append((startX: labelStart, endX: labelEnd))
+            }
+        }
+
+        return positions
+    }
+
+    private func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)], yOffset: CGFloat = 0) -> ConnectionLines {
         guard !layout.isEmpty else { return ConnectionLines(tracks: [], forkMerges: []) }
 
         // Sort chronologically by start date
@@ -211,7 +284,7 @@ struct LaneRowView: View {
         // Sub-row 0 spans the full viewport; others span their event extents
         var tracks: [LineSegment] = []
         for (subRow, range) in subRowRanges {
-            let y = yCenter(forSubRow: subRow)
+            let y = yCenter(forSubRow: subRow, yOffset: yOffset)
             if subRow == 0 {
                 tracks.append(LineSegment(from: CGPoint(x: 0, y: y),
                                           to: CGPoint(x: viewport.viewportWidth, y: y)))
@@ -222,10 +295,10 @@ struct LaneRowView: View {
         }
 
         // Build fork/merge connectors for each non-zero sub-row back to row 0
-        let row0Y = yCenter(forSubRow: 0)
+        let row0Y = yCenter(forSubRow: 0, yOffset: yOffset)
         var forkMerges: [ForkMerge] = []
         for (subRow, range) in subRowRanges where subRow != 0 {
-            let subRowY = yCenter(forSubRow: subRow)
+            let subRowY = yCenter(forSubRow: subRow, yOffset: yOffset)
             forkMerges.append(ForkMerge(x: range.minX, row0Y: row0Y, subRowY: subRowY, isFork: true))
             forkMerges.append(ForkMerge(x: range.maxX, row0Y: row0Y, subRowY: subRowY, isFork: false))
         }
@@ -253,6 +326,7 @@ struct LaneRowView: View {
     return LaneRowView(
         lane: lane,
         viewport: TimelineViewport(),
+        showPointLabels: false,
         selectedEventID: nil,
         onSelectEvent: { _ in }
     )

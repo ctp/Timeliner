@@ -124,6 +124,7 @@ Implemented:
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
 - ✅ Sidebar for lane/tag management
 - ✅ Hover popovers on events showing styled event details (title, description, dates, tags)
+- ✅ Point event labels: toggled via View > Show Point Labels (⌘L), with connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically
 - ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans, point events, and Important/Milestone tags
 
 ## Future Work (Out of Scope for v1)

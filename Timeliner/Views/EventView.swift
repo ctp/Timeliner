@@ -13,6 +13,8 @@ struct EventView: View {
     let onSelect: () -> Void
     var subRow: Int = 0
     var rowHeight: CGFloat = 40
+    var labelPosition: LabelPosition = .none
+    var yOffset: CGFloat = 0
 
     @State private var isHovered = false
 
@@ -20,7 +22,7 @@ struct EventView: View {
     private let baseRowHeight: CGFloat = 40
 
     private var yCenter: CGFloat {
-        baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
+        yOffset + baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
     }
 
     var body: some View {
@@ -48,25 +50,52 @@ struct EventView: View {
 
     private var pointEventView: some View {
         let x = viewport.xPosition(for: event.startDate.asDate)
+        let isAbove = labelPosition.isAbove
+        let showLabel = labelPosition != .none
+        let tier = CGFloat(labelPosition.tier)
+        let connectorLength = LabelPosition.connectorBase + LabelPosition.tierHeight * tier
 
-        return eventInteractions(
-            ZStack {
-                Circle()
-                    .fill(Color(nsColor: .textBackgroundColor))
-                    .frame(width: 12, height: 12)
-                Circle()
-                    .fill(eventColor.opacity(0.1))
-                    .strokeBorder(eventColor, lineWidth: 2)
-                    .frame(width: 12, height: 12)
-
-                if isSelected {
+        return ZStack {
+            eventInteractions(
+                ZStack {
                     Circle()
-                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                        .frame(width: 16, height: 16)
+                        .fill(Color(nsColor: .textBackgroundColor))
+                        .frame(width: 12, height: 12)
+                    Circle()
+                        .fill(eventColor.opacity(0.1))
+                        .strokeBorder(eventColor, lineWidth: 2)
+                        .frame(width: 12, height: 12)
+
+                    if isSelected {
+                        Circle()
+                            .strokeBorder(Color.accentColor, lineWidth: 2)
+                            .frame(width: 16, height: 16)
+                    }
                 }
+            )
+            .position(x: x, y: yCenter)
+
+            if showLabel {
+                let dotEdge = yCenter + (isAbove ? -6 : 6)
+                let lineEnd = dotEdge + (isAbove ? -connectorLength : connectorLength)
+                let textY = lineEnd + (isAbove ? -6 : 6)
+
+                // Connector line
+                Path { path in
+                    path.move(to: CGPoint(x: x, y: dotEdge))
+                    path.addLine(to: CGPoint(x: x, y: lineEnd))
+                }
+                .stroke(eventColor.opacity(0.5), lineWidth: 1)
+
+                // Label text
+                Text(event.title)
+                    .font(.caption2)
+                    .foregroundColor(eventColor)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .position(x: x, y: textY)
             }
-        )
-        .position(x: x, y: yCenter)
+        }
     }
 
     private var spanEventView: some View {

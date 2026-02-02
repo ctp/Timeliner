@@ -21,6 +21,7 @@ struct TimelinerApp: App {
 
 struct TimelineCommands: Commands {
     @FocusedBinding(\.fitToContent) private var fitToContent
+    @FocusedBinding(\.showPointLabels) private var showPointLabels
 
     var body: some Commands {
         CommandGroup(after: .toolbar) {
@@ -29,6 +30,13 @@ struct TimelineCommands: Commands {
             }
             .keyboardShortcut("0", modifiers: .command)
             .disabled(fitToContent == nil)
+
+            Toggle("Show Point Labels", isOn: Binding(
+                get: { showPointLabels ?? false },
+                set: { showPointLabels = $0 }
+            ))
+            .keyboardShortcut("l", modifiers: .command)
+            .disabled(showPointLabels == nil)
         }
     }
 }

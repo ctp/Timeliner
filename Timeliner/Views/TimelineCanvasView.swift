@@ -6,12 +6,40 @@
 import SwiftUI
 import SwiftData
 
+enum LabelPosition: Equatable {
+    case none
+    case above(tier: Int)
+    case below(tier: Int)
+
+    var isAbove: Bool {
+        if case .above = self { return true }
+        return false
+    }
+
+    var isBelow: Bool {
+        if case .below = self { return true }
+        return false
+    }
+
+    var tier: Int {
+        switch self {
+        case .none: return 0
+        case .above(let t), .below(let t): return t
+        }
+    }
+
+    static let tierHeight: CGFloat = 16
+    static let connectorBase: CGFloat = 12
+    static let maxAboveTiers = 4
+}
+
 struct TimelineCanvasView: View {
     @Query(sort: \Lane.sortOrder) private var lanes: [Lane]
     @Query private var unassignedEvents: [TimelineEvent]
     @Query private var allEvents: [TimelineEvent]
 
     @Binding var fitToContent: Bool
+    @Binding var showPointLabels: Bool
 
     @State private var viewport: TimelineViewport
     @State private var selectedEventID: UUID?
@@ -19,8 +47,9 @@ struct TimelineCanvasView: View {
     @State private var dragStartCenter: Date?
     @State private var hasAutoFitted = false
 
-    init(fitToContent: Binding<Bool>) {
+    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>) {
         _fitToContent = fitToContent
+        _showPointLabels = showPointLabels
         _viewport = State(initialValue: TimelineViewport(
             centerDate: Date(),
             scale: 86400 * 30, // ~1 month per point initially
@@ -46,6 +75,7 @@ struct TimelineCanvasView: View {
                             LaneRowView(
                                 lane: lane,
                                 viewport: viewportWithWidth(geometry.size.width),
+                                showPointLabels: showPointLabels,
                                 selectedEventID: selectedEventID,
                                 onSelectEvent: { event in
                                     selectedEventID = event.id
@@ -102,8 +132,18 @@ struct TimelineCanvasView: View {
         let vp = viewportWithWidth(width)
         let layout = layoutEvents(eventsWithoutLane, viewport: vp)
         let baseRowHeight: CGFloat = 40
-        let totalHeight = baseRowHeight * CGFloat(max(layout.totalRows, 1))
-        let lines = computeConnectionLines(layout: layout.layout, viewport: vp, baseRowHeight: baseRowHeight)
+        let labelPositions = showPointLabels ? computeLabelPositions(layout: layout, viewport: vp) : [:]
+        let maxAboveTier = labelPositions.values.filter(\.isAbove).map(\.tier).max()
+        let maxBelowTier = labelPositions.values.filter(\.isBelow).map(\.tier).max()
+        let topPadding: CGFloat = maxAboveTier != nil
+            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxAboveTier! + 1)
+            : 0
+        let bottomPadding: CGFloat = maxBelowTier != nil
+            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxBelowTier! + 1)
+            : 0
+        let laneContentHeight = baseRowHeight * CGFloat(max(layout.totalRows, 1))
+        let totalHeight = topPadding + laneContentHeight + bottomPadding
+        let lines = computeConnectionLines(layout: layout.layout, viewport: vp, baseRowHeight: baseRowHeight, yOffset: topPadding)
 
         return ZStack(alignment: .leading) {
             Rectangle()
@@ -165,7 +205,9 @@ struct TimelineCanvasView: View {
                     isSelected: item.event.id == selectedEventID,
                     onSelect: { selectedEventID = item.event.id },
                     subRow: item.subRow,
-                    rowHeight: totalHeight
+                    rowHeight: totalHeight,
+                    labelPosition: labelPositions[item.event.id] ?? .none,
+                    yOffset: topPadding
                 )
             }
         }
@@ -257,7 +299,63 @@ struct TimelineCanvasView: View {
         return (startX, endX)
     }
 
-    private func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)], viewport vp: TimelineViewport, baseRowHeight: CGFloat) -> ConnectionLines {
+    private func computeLabelPositions(layout: (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int), viewport vp: TimelineViewport) -> [UUID: LabelPosition] {
+        let points = layout.layout.filter { $0.event.isPointEvent }
+            .sorted { $0.event.startDate.asDate < $1.event.startDate.asDate }
+
+        guard !points.isEmpty else { return [:] }
+
+        var positions: [UUID: LabelPosition] = [:]
+        let charWidth: CGFloat = 7
+        let labelPadding: CGFloat = 8
+        let maxAbove = LabelPosition.maxAboveTiers
+
+        var aboveTiers: [[(startX: CGFloat, endX: CGFloat)]] = Array(repeating: [], count: maxAbove)
+        var belowTiers: [[(startX: CGFloat, endX: CGFloat)]] = Array(repeating: [], count: 2)
+
+        func collidesInTier(_ intervals: [(startX: CGFloat, endX: CGFloat)], start: CGFloat, end: CGFloat) -> Bool {
+            intervals.contains { start < $0.endX && end > $0.startX }
+        }
+
+        for item in points {
+            let x = vp.xPosition(for: item.event.startDate.asDate)
+            let titleWidth = CGFloat(item.event.title.count) * charWidth
+            let halfWidth = (titleWidth + labelPadding) / 2
+            let labelStart = x - halfWidth
+            let labelEnd = x + halfWidth
+
+            var placed = false
+
+            for tier in 0..<maxAbove {
+                if !collidesInTier(aboveTiers[tier], start: labelStart, end: labelEnd) {
+                    positions[item.event.id] = .above(tier: tier)
+                    aboveTiers[tier].append((startX: labelStart, endX: labelEnd))
+                    placed = true
+                    break
+                }
+            }
+
+            if !placed {
+                for tier in 0..<belowTiers.count {
+                    if !collidesInTier(belowTiers[tier], start: labelStart, end: labelEnd) {
+                        positions[item.event.id] = .below(tier: tier)
+                        belowTiers[tier].append((startX: labelStart, endX: labelEnd))
+                        placed = true
+                        break
+                    }
+                }
+            }
+
+            if !placed {
+                positions[item.event.id] = .above(tier: maxAbove - 1)
+                aboveTiers[maxAbove - 1].append((startX: labelStart, endX: labelEnd))
+            }
+        }
+
+        return positions
+    }
+
+    private func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)], viewport vp: TimelineViewport, baseRowHeight: CGFloat, yOffset: CGFloat = 0) -> ConnectionLines {
         guard !layout.isEmpty else { return ConnectionLines(tracks: [], forkMerges: []) }
 
         let sorted = layout.sorted { $0.event.startDate.asDate < $1.event.startDate.asDate }
@@ -277,7 +375,7 @@ struct TimelineCanvasView: View {
 
         var tracks: [LineSegment] = []
         for (subRow, range) in subRowRanges {
-            let y = baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
+            let y = yOffset + baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
             if subRow == 0 {
                 tracks.append(LineSegment(from: CGPoint(x: 0, y: y),
                                           to: CGPoint(x: vp.viewportWidth, y: y)))
@@ -287,10 +385,10 @@ struct TimelineCanvasView: View {
             }
         }
 
-        let row0Y = baseRowHeight / 2
+        let row0Y = yOffset + baseRowHeight / 2
         var forkMerges: [ForkMerge] = []
         for (subRow, range) in subRowRanges where subRow != 0 {
-            let subRowY = baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
+            let subRowY = yOffset + baseRowHeight * CGFloat(subRow) + baseRowHeight / 2
             forkMerges.append(ForkMerge(x: range.minX, row0Y: row0Y, subRowY: subRowY, isFork: true))
             forkMerges.append(ForkMerge(x: range.maxX, row0Y: row0Y, subRowY: subRowY, isFork: false))
         }
@@ -404,7 +502,7 @@ struct TimelineCanvasView: View {
 }
 
 #Preview {
-    TimelineCanvasView(fitToContent: .constant(false))
+    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false))
         .modelContainer(for: [TimelineEvent.self, Lane.self, Tag.self], inMemory: true)
         .frame(width: 800, height: 400)
 }
