@@ -72,6 +72,7 @@ Timeliner/
 │   ├── Lane.swift
 │   └── Tag.swift
 ├── Views/
+│   ├── TimelineLayoutEngine.swift  # Shared layout types and functions
 │   ├── TimelineViewport.swift
 │   ├── TimelineCanvasView.swift
 │   ├── TimeAxisView.swift
@@ -145,7 +146,7 @@ These were explicitly deferred but the model accommodates them:
 
 - `docs/plans/2026-01-26-timeline-core-design.md` - Approved design spec
 - `docs/plans/2026-01-26-timeline-implementation.md` - Implementation plan with 13 tasks
-- `docs/plans/2026-02-01-extract-timeline-layout-engine.md` - Plan to extract duplicated layout code into shared TimelineLayoutEngine
+- `docs/plans/2026-02-01-extract-timeline-layout-engine.md` - Plan to extract duplicated layout code into shared TimelineLayoutEngine (completed)
 
 ## Git Remote
 
