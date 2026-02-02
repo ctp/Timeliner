@@ -120,11 +120,11 @@ Implemented:
 - ✅ Git-style connection lines: railroad-track graph with 3pt lane-colored lines, S-curve fork/merge connectors, gradient fade at viewport edges
 - ✅ Pan (drag on time axis) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); lane area reserved for future event dragging
 - ✅ Fit-to-content viewport scaling (auto-fits on document load via async task, toolbar button, and View menu item with ⌘0)
-- ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds
+- ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds and calendar-anchored label cadence (labels stay stable during resize/scroll)
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
 - ✅ Sidebar for lane/tag management
 - ✅ Hover popovers on events showing styled event details (title, description, dates, tags)
-- ✅ Point event labels: toggled via View > Show Point Labels (⌘L), with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
+- ✅ Point event labels: toggled via View > Show Point Labels (⌘L) and toolbar button, with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
 - ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans, point events, and Important/Milestone tags
 
 ## Future Work (Out of Scope for v1)

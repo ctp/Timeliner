@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct TimelineViewport: Equatable, Sendable {
+struct TimelineViewport: Equatable, Hashable, Sendable {
     /// The date at the center of the viewport
     var centerDate: Date
 

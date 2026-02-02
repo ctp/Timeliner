@@ -53,6 +53,11 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
+                Button(action: { showPointLabels.toggle() }) {
+                    Label("Show Point Labels", systemImage: showPointLabels ? "tag.fill" : "tag")
+                }
+            }
+            ToolbarItem(placement: .automatic) {
                 Button(action: { fitToContent = true }) {
                     Label("Fit to Content", systemImage: "arrow.left.and.line.vertical.and.arrow.right")
                 }

@@ -11,6 +11,8 @@ struct TimeAxisView: View {
     var body: some View {
         Canvas { context, size in
             let ticks = calculateTicks(for: viewport, width: size.width)
+            let interval = tickInterval(for: viewport.scale)
+            let calendar = Calendar.current
 
             for tick in ticks {
                 let x = viewport.xPosition(for: tick.date)
@@ -23,8 +25,9 @@ struct TimeAxisView: View {
                 path.addLine(to: CGPoint(x: x, y: size.height))
                 context.stroke(path, with: .color(.secondary), lineWidth: 1)
 
-                // Draw label for major ticks
-                if tick.isMajor {
+                // Label ticks using calendar-anchored cadence so the same
+                // dates always get labels regardless of viewport position.
+                if tick.isMajor || isLabelTick(date: tick.date, interval: interval, calendar: calendar) {
                     let text = Text(tick.label)
                         .font(.caption2)
                         .foregroundColor(.secondary)
@@ -32,6 +35,7 @@ struct TimeAxisView: View {
                 }
             }
         }
+        .id(viewport)
         .frame(height: 30)
     }
 
@@ -112,6 +116,25 @@ struct TimeAxisView: View {
         case .month: return calendar.date(byAdding: .month, value: 1, to: date)
         case .year: return calendar.date(byAdding: .year, value: 1, to: date)
         case .decade: return calendar.date(byAdding: .year, value: 10, to: date)
+        }
+    }
+
+    /// Calendar-anchored label cadence: every ~3rd tick gets a label, determined
+    /// purely by the date so labels never appear or disappear as the viewport resizes.
+    private func isLabelTick(date: Date, interval: TickInterval, calendar: Calendar) -> Bool {
+        switch interval {
+        case .hour:
+            return calendar.component(.hour, from: date) % 3 == 0
+        case .day:
+            return (calendar.ordinality(of: .day, in: .year, for: date) ?? 1) % 3 == 1
+        case .week:
+            return (calendar.component(.weekOfYear, from: date)) % 3 == 1
+        case .month:
+            return (calendar.component(.month, from: date) - 1) % 3 == 0
+        case .year:
+            return calendar.component(.year, from: date) % 3 == 0
+        case .decade:
+            return (calendar.component(.year, from: date) / 10) % 3 == 0
         }
     }
 
