@@ -533,29 +533,15 @@ struct TimelineCanvasView: View {
     }
 
     private func fitViewportToContent(width: CGFloat) {
-        guard !allEvents.isEmpty else { return }
+        guard let bounds = eventDateBounds else { return }
 
-        var earliest = Date.distantFuture
-        var latest = Date.distantPast
-
-        for event in allEvents {
-            let start = event.startDate.asDate
-            if start < earliest { earliest = start }
-            if start > latest { latest = start }
-
-            if let end = event.endDate {
-                let endDate = end.asDate
-                if endDate > latest { latest = endDate }
-            }
-        }
-
-        let rangeSeconds = latest.timeIntervalSince(earliest)
+        let rangeSeconds = bounds.latest.timeIntervalSince(bounds.earliest)
         // For point-only timelines (range == 0), show ±1 day around the point
         let effectiveRange = rangeSeconds > 0 ? rangeSeconds * 1.4 : 86400 * 2
         let newScale = max(1, effectiveRange / Double(width))
 
         viewport.scale = newScale
-        viewport.centerDate = earliest.addingTimeInterval(rangeSeconds / 2)
+        viewport.centerDate = bounds.earliest.addingTimeInterval(rangeSeconds / 2)
         viewport.viewportWidth = width
         clampViewport()
     }

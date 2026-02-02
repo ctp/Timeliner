@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct EventView: View {
     let event: TimelineEvent
