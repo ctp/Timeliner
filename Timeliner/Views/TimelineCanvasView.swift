@@ -90,6 +90,11 @@ struct TimelineCanvasView: View {
                     }
                 }
             }
+            .onHorizontalScroll { deltaX in
+                let deltaSeconds = TimeInterval(-deltaX) * viewport.scale
+                viewport.centerDate = viewport.centerDate.addingTimeInterval(deltaSeconds)
+                clampViewport()
+            }
             .onAppear {
                 viewport.viewportWidth = geometry.size.width
             }

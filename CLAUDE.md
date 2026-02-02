@@ -118,7 +118,7 @@ Implemented:
 - ✅ Stacked lane rows with interval-collision layout (spans pack into the first sub-row with no actual overlap; point events always occupy row 0, spans only bump down on real collisions; lanes expand dynamically)
 - ✅ Point events (dots with outline) and span events (bars with outline and tinted lane-color fill)
 - ✅ Git-style connection lines: railroad-track graph with 3pt lane-colored lines, S-curve fork/merge connectors, gradient fade at viewport edges
-- ✅ Pan (drag on time axis) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); lane area reserved for future event dragging
+- ✅ Pan (drag on time axis, or horizontal trackpad/scroll wheel anywhere) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); scroll input via NSEvent local monitor so vertical lane scrolling coexists; lane area reserved for future event dragging
 - ✅ Fit-to-content viewport scaling (auto-fits on document load via async task, toolbar button, and View menu item with ⌘0)
 - ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds and calendar-anchored label cadence (labels stay stable during resize/scroll)
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
