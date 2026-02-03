@@ -51,4 +51,29 @@ struct TimelineViewportTests {
         let dateAtRight = viewport.date(forX: 60)
         #expect(abs(dateAtRight.timeIntervalSinceReferenceDate - 10) < 0.001)
     }
+
+    @Test func currentPrecisionAtMinuteZoom() {
+        let vp = TimelineViewport(centerDate: Date(), scale: 30, viewportWidth: 1000)
+        #expect(vp.currentPrecision() == .time)
+    }
+
+    @Test func currentPrecisionAtHourZoom() {
+        let vp = TimelineViewport(centerDate: Date(), scale: 600, viewportWidth: 1000)
+        #expect(vp.currentPrecision() == .time)
+    }
+
+    @Test func currentPrecisionAtDayZoom() {
+        let vp = TimelineViewport(centerDate: Date(), scale: 43200, viewportWidth: 1000)
+        #expect(vp.currentPrecision() == .day)
+    }
+
+    @Test func currentPrecisionAtMonthZoom() {
+        let vp = TimelineViewport(centerDate: Date(), scale: 5_000_000, viewportWidth: 1000)
+        #expect(vp.currentPrecision() == .month)
+    }
+
+    @Test func currentPrecisionAtYearZoom() {
+        let vp = TimelineViewport(centerDate: Date(), scale: 50_000_000, viewportWidth: 1000)
+        #expect(vp.currentPrecision() == .year)
+    }
 }

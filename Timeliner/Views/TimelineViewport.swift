@@ -47,4 +47,15 @@ struct TimelineViewport: Equatable, Hashable, Sendable {
         let secondsFromCenter = TimeInterval(pointsFromCenter) * scale
         return centerDate.addingTimeInterval(secondsFromCenter)
     }
+
+    /// Returns the appropriate FlexibleDate precision for the current zoom level.
+    func currentPrecision() -> DatePrecision {
+        switch scale {
+        case ..<3_600:       return .time   // Can see hours or finer
+        case ..<86_400:      return .day    // Can see parts of days
+        case ..<2_592_000:   return .day    // Days to weeks
+        case ..<31_536_000:  return .month  // Months
+        default:             return .year   // Years+
+        }
+    }
 }
