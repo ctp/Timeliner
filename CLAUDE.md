@@ -127,12 +127,13 @@ Implemented:
 - ✅ Hover popovers on events showing styled event details (title, description, dates, tags)
 - ✅ Point event labels: toggled via View > Show Point Labels (⌘L) and toolbar button, with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
 - ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans, point events, and Important/Milestone tags
+- ✅ Point event creation: double-click on lane row to create a point event with zoom-appropriate precision and auto-generated title from date
 
 ## Future Work (Out of Scope for v1)
 
 These were explicitly deferred but the model accommodates them:
 
-1. **Event Editing UI** - Currently no way to add/edit events beyond sample data
+1. **Event Editing UI** - Can create point events via double-click; no way to edit or delete events yet
 2. **Attachments** - Images, files, links (Attachments/ directory reserved in doc package)
 3. **Event Relationships** - Links between events (causal, sequential)
 4. **Vertical Orientation** - Alternative timeline layout
@@ -147,6 +148,8 @@ These were explicitly deferred but the model accommodates them:
 - `docs/plans/2026-01-26-timeline-core-design.md` - Approved design spec
 - `docs/plans/2026-01-26-timeline-implementation.md` - Implementation plan with 13 tasks
 - `docs/plans/2026-02-01-extract-timeline-layout-engine.md` - Plan to extract duplicated layout code into shared TimelineLayoutEngine (completed)
+- `docs/plans/2026-02-02-point-event-creation-design.md` - Design for double-click point event creation
+- `docs/plans/2026-02-02-point-event-creation.md` - Implementation plan for point event creation (completed)
 
 ## Git Remote
 
