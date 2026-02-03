@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Timeliner is a macOS Catalyst timeline visualization app built with SwiftUI and SwiftData. Users create `.timeliner` documents containing events organized into lanes (horizontal tracks) and tagged for filtering.
+Timeliner is a macOS Catalyst timeline visualization app built with SwiftUI and SwiftData. Users create `.timeliner` documents containing events organized into lanes (horizontal tracks).
 
 ## Tech Stack
 
@@ -18,14 +18,13 @@ Timeliner is a macOS Catalyst timeline visualization app built with SwiftUI and 
 | Model | Purpose |
 |-------|---------|
 | `FlexibleDate` | Variable-precision date (year-only through minute-level) with timezone-aware storage |
-| `TimelineEvent` | Main entity with title, description, start/end dates, lane, and tags |
+| `TimelineEvent` | Main entity with title, description, start/end dates, and lane |
 | `Lane` | Visual grouping track (horizontal row) with name, color, sortOrder |
-| `Tag` | Cross-cutting labels for filtering events |
 
 **Key design decisions:**
 - `FlexibleDate` is stored as JSON-encoded `Data` in `TimelineEvent` (SwiftData doesn't directly support custom structs)
 - `FlexibleDate` timezone convention: day-precision and coarser store raw calendar values (no timezone); time-precision (hour/minute) stores UTC internally. Use `fromLocalTime(...)` to create time-precision dates and `localDisplayComponents` to read them back in local time.
-- Relationships: Lane → Events (one-to-many), Tag ↔ Events (many-to-many)
+- Relationships: Lane → Events (one-to-many)
 - Events without a lane appear in an "Unassigned" section
 
 ### Document Structure
@@ -45,8 +44,7 @@ UTType: `com.timeliner.document`
 ContentView
 ├── NavigationSplitView
 │   ├── Sidebar (List)
-│   │   ├── LaneListView    # CRUD for lanes
-│   │   └── TagListView     # CRUD for tags with filter toggles
+│   │   └── LaneListView    # CRUD for lanes
 │   └── Detail
 │       └── TimelineCanvasView
 │           ├── TimeAxisView      # Time ruler with adaptive ticks
@@ -70,8 +68,7 @@ Timeliner/
 ├── Models/
 │   ├── FlexibleDate.swift
 │   ├── TimelineEvent.swift
-│   ├── Lane.swift
-│   └── Tag.swift
+│   └── Lane.swift
 ├── Views/
 │   ├── TimelineLayoutEngine.swift  # Shared layout types and functions
 │   ├── TimelineViewport.swift
@@ -82,8 +79,7 @@ Timeliner/
 │   ├── EventInspectorView.swift  # Trailing inspector for editing events
 │   ├── FlexibleDateEditor.swift  # Reusable progressive date fields
 │   └── Sidebar/
-│       ├── LaneListView.swift
-│       └── TagListView.swift
+│       └── LaneListView.swift
 ├── ContentView.swift
 ├── TimelinerApp.swift
 └── Info.plist
@@ -126,10 +122,10 @@ Implemented:
 - ✅ Fit-to-content viewport scaling (auto-fits on document load via async task, toolbar button, and View menu item with ⌘0)
 - ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds and calendar-anchored label cadence (labels stay stable during resize/scroll)
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
-- ✅ Sidebar for lane/tag management
+- ✅ Sidebar for lane management
 - ✅ System tooltips on events showing title (replaced hover popovers to avoid click interference)
 - ✅ Point event labels: toggled via View > Show Point Labels (⌘L) and toolbar button, with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
-- ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans, point events, and Important/Milestone tags
+- ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans and point events
 - ✅ Point event creation: double-click on lane row to create a point event with zoom-appropriate precision and auto-generated title from date
 - ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with segmented precision picker (Year|Month|Day|Time) for FlexibleDate fields; auto-opens on event creation; changing start date shifts end date to preserve duration; end date clamped to at least one day after start; FlexibleDateEditor syncs from external binding changes
 - ✅ Menu event creation: File > New Point Event (⌘E) and New Span Event (⇧⌘E); places at viewport center, uses selected event's lane (fallback to first lane); span default durations vary by precision (time: +4h, day: +7d, month: +3mo, year: +5yr); auto-selects and opens inspector
@@ -139,15 +135,14 @@ Implemented:
 
 These were explicitly deferred but the model accommodates them:
 
-1. **Event Editing UI** - Can create and edit events (title, description, dates); no deletion, lane reassignment, or tag editing yet
+1. **Event Editing UI** - Can create and edit events (title, description, dates); no deletion or lane reassignment yet
 2. **Attachments** - Images, files, links (Attachments/ directory reserved in doc package)
 3. **Event Relationships** - Links between events (causal, sequential)
 4. **Vertical Orientation** - Alternative timeline layout
 5. **Collapsible Lanes** - Expand/collapse for focus
 6. **Minimap** - Overview navigation for large timelines
-7. **Tag Filtering** - `activeTagFilters` state exists but isn't wired to filter displayed events
-8. **Lane Color Picker** - Currently hardcoded; needs UI for user selection
-9. **Search** - Find events by title/description
+7. **Lane Color Picker** - Currently hardcoded; needs UI for user selection
+8. **Search** - Find events by title/description
 
 ## Design Documents
 

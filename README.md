@@ -8,7 +8,6 @@ A native macOS document-based app for visualizing events on a horizontal timelin
 - **Flexible dates** -- Events support year, month, day, or hour/minute precision, so you can mix "1776" with "June 15, 2024 at 3:00 PM" on the same timeline
 - **Point and span events** -- Represent moments as dots or durations as bars
 - **Lanes** -- Organize events into horizontal tracks with custom names and colors
-- **Tags** -- Label events across lanes for cross-cutting categorization
 - **Pan and zoom** -- Drag or scroll horizontally to pan; pinch to zoom. Fit-to-content with **Cmd+0**
 - **Adaptive time axis** -- Tick labels adjust from hours to decades depending on zoom level
 - **Drag to move and resize** -- Drag events to reposition them in time; drag the edges of span events to change their start or end date
@@ -39,7 +38,7 @@ Select an event and open the inspector (**Cmd+I**) to edit its title, descriptio
 
 ### Organizing
 
-Use the sidebar to create and manage lanes and tags. Events without a lane appear in an "Unassigned" section at the bottom.
+Use the sidebar to create and manage lanes. Events without a lane appear in an "Unassigned" section at the bottom.
 
 ## Building
 
@@ -69,9 +68,8 @@ xcodebuild test -scheme Timeliner -destination 'platform=macOS' -only-testing:Ti
 | Model | Role |
 |-------|------|
 | `FlexibleDate` | Variable-precision date (year through minute) with timezone-aware storage |
-| `TimelineEvent` | Title, description, start/end `FlexibleDate`, lane, and tags |
+| `TimelineEvent` | Title, description, start/end `FlexibleDate`, and lane |
 | `Lane` | Named horizontal track with color and sort order |
-| `Tag` | Cross-cutting label for filtering |
 
 `FlexibleDate` is stored as JSON-encoded `Data` inside `TimelineEvent` since SwiftData doesn't natively support custom value types. Day-precision and coarser dates store raw calendar values; time-precision dates store UTC internally and convert to local time for display.
 

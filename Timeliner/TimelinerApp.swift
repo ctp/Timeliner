@@ -86,6 +86,5 @@ struct TimelinerVersionedSchema: VersionedSchema {
     static var models: [any PersistentModel.Type] = [
         TimelineEvent.self,
         Lane.self,
-        Tag.self,
     ]
 }

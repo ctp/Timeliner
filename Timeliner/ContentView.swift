@@ -55,7 +55,6 @@ extension FocusedValues {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var activeTagFilters: Set<UUID> = []
     @State private var fitToContent = false
     @State private var showPointLabels = false
     @State private var showInspector = false
@@ -66,7 +65,6 @@ struct ContentView: View {
         NavigationSplitView {
             List {
                 LaneListView()
-                TagListView(activeTagFilters: $activeTagFilters)
             }
             #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
@@ -118,12 +116,6 @@ struct ContentView: View {
         modelContext.insert(workLane)
         modelContext.insert(personalLane)
 
-        // Create sample tags
-        let importantTag = Tag(name: "Important", color: "#F39C12")
-        let milestoneTag = Tag(name: "Milestone", color: "#9B59B6")
-        modelContext.insert(importantTag)
-        modelContext.insert(milestoneTag)
-
         // Helper to make FlexibleDate from a Date offset
         let today = Date()
         let calendar = Calendar.current
@@ -148,8 +140,6 @@ struct ContentView: View {
             startDate: flexDay(today),
             lane: workLane
         )
-        kickoff.tags = [importantTag]
-
         let sprint1 = TimelineEvent(
             title: "Sprint 1",
             eventDescription: "User authentication and onboarding flows",
@@ -179,8 +169,6 @@ struct ContentView: View {
             startDate: flexDay(dayDate(21)),
             lane: workLane
         )
-        clientDemo.tags = [importantTag, milestoneTag]
-
         let sprint3 = TimelineEvent(
             title: "Sprint 3",
             eventDescription: "Notifications and integrations",
@@ -195,8 +183,6 @@ struct ContentView: View {
             startDate: flexDay(dayDate(42)),
             lane: workLane
         )
-        codeFreeze.tags = [milestoneTag]
-
         let qaPhase = TimelineEvent(
             title: "QA & Bug Fixes",
             eventDescription: "Testing and stabilization period",
@@ -211,8 +197,6 @@ struct ContentView: View {
             startDate: flexDay(dayDate(56)),
             lane: workLane
         )
-        launchDay.tags = [importantTag, milestoneTag]
-
         let teamRetro = TimelineEvent(
             title: "Team Retro",
             eventDescription: "Post-launch retrospective",
@@ -250,8 +234,6 @@ struct ContentView: View {
             endDate: flexDay(dayDate(23)),
             lane: personalLane
         )
-        moveIn.tags = [importantTag]
-
         let concert = TimelineEvent(
             title: "Concert Night",
             eventDescription: "Live jazz at the downtown venue",
@@ -279,8 +261,6 @@ struct ContentView: View {
             startDate: flexDay(dayDate(38)),
             lane: personalLane
         )
-        halfMarathon.tags = [milestoneTag]
-
         let familyVisit = TimelineEvent(
             title: "Family Visit",
             eventDescription: "Parents in town for the week",
@@ -295,8 +275,6 @@ struct ContentView: View {
             startDate: flexDay(dayDate(58)),
             lane: personalLane
         )
-        anniversary.tags = [importantTag]
-
         let allEvents: [TimelineEvent] = [
             kickoff, sprint1, designReview, sprint2, clientDemo,
             sprint3, codeFreeze, qaPhase, launchDay, teamRetro,
@@ -313,5 +291,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [TimelineEvent.self, Lane.self, Tag.self], inMemory: true)
+        .modelContainer(for: [TimelineEvent.self, Lane.self], inMemory: true)
 }

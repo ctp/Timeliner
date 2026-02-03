@@ -17,7 +17,6 @@ final class TimelineEvent {
     private var endDateData: Data?
 
     var lane: Lane?
-    var tags: [Tag] = []
 
     var createdAt: Date
     var modifiedAt: Date

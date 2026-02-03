@@ -358,6 +358,6 @@ struct TimelineCanvasView: View {
 
 #Preview {
     TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), createPointEvent: .constant(false), createSpanEvent: .constant(false))
-        .modelContainer(for: [TimelineEvent.self, Lane.self, Tag.self], inMemory: true)
+        .modelContainer(for: [TimelineEvent.self, Lane.self], inMemory: true)
         .frame(width: 800, height: 400)
 }
