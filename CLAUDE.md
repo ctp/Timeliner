@@ -131,7 +131,7 @@ Implemented:
 - ✅ Point event labels: toggled via View > Show Point Labels (⌘L) and toolbar button, with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
 - ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans, point events, and Important/Milestone tags
 - ✅ Point event creation: double-click on lane row to create a point event with zoom-appropriate precision and auto-generated title from date
-- ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with progressive FlexibleDate fields (year→month→day→time); auto-opens on event creation
+- ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with segmented precision picker (Year|Month|Day|Time) for FlexibleDate fields; auto-opens on event creation
 
 ## Future Work (Out of Scope for v1)
 

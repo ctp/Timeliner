@@ -5,11 +5,20 @@
 
 import Foundation
 
-enum DatePrecision: Int, Codable, Comparable {
+enum DatePrecision: Int, Codable, Comparable, CaseIterable {
     case year = 0
     case month = 1
     case day = 2
     case time = 3
+
+    var label: String {
+        switch self {
+        case .year: "Year"
+        case .month: "Month"
+        case .day: "Day"
+        case .time: "Time"
+        }
+    }
 
     static func < (lhs: DatePrecision, rhs: DatePrecision) -> Bool {
         lhs.rawValue < rhs.rawValue
