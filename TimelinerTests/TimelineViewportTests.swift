@@ -76,4 +76,58 @@ struct TimelineViewportTests {
         let vp = TimelineViewport(centerDate: Date(), scale: 50_000_000, viewportWidth: 1000)
         #expect(vp.currentPrecision() == .year)
     }
+
+    @Test func snappedDateYearPrecision() {
+        let vp = TimelineViewport()
+        // July 15, 2024 14:30 → Jan 1, 2024
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 15; comps.hour = 14; comps.minute = 30
+        let input = Calendar.current.date(from: comps)!
+        let snapped = vp.snappedDate(from: input, precision: .year)
+        let result = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: snapped)
+        #expect(result.year == 2024)
+        #expect(result.month == 1)
+        #expect(result.day == 1)
+        #expect(result.hour == 0)
+        #expect(result.minute == 0)
+    }
+
+    @Test func snappedDateMonthPrecision() {
+        let vp = TimelineViewport()
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 15; comps.hour = 14; comps.minute = 30
+        let input = Calendar.current.date(from: comps)!
+        let snapped = vp.snappedDate(from: input, precision: .month)
+        let result = Calendar.current.dateComponents([.year, .month, .day], from: snapped)
+        #expect(result.year == 2024)
+        #expect(result.month == 7)
+        #expect(result.day == 1)
+    }
+
+    @Test func snappedDateDayPrecision() {
+        let vp = TimelineViewport()
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 15; comps.hour = 14; comps.minute = 30
+        let input = Calendar.current.date(from: comps)!
+        let snapped = vp.snappedDate(from: input, precision: .day)
+        let result = Calendar.current.dateComponents([.year, .month, .day, .hour], from: snapped)
+        #expect(result.year == 2024)
+        #expect(result.month == 7)
+        #expect(result.day == 15)
+        #expect(result.hour == 0)
+    }
+
+    @Test func snappedDateTimePrecision() {
+        let vp = TimelineViewport()
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 15; comps.hour = 14; comps.minute = 37
+        let input = Calendar.current.date(from: comps)!
+        let snapped = vp.snappedDate(from: input, precision: .time)
+        let result = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: snapped)
+        #expect(result.year == 2024)
+        #expect(result.month == 7)
+        #expect(result.day == 15)
+        #expect(result.hour == 14)
+        #expect(result.minute == 37)
+    }
 }

@@ -58,4 +58,21 @@ struct TimelineViewport: Equatable, Hashable, Sendable {
         default:             return .year   // Years+
         }
     }
+
+    /// Snap a date to the boundary for the given precision.
+    /// Returns the start of the year, month, day, or the exact minute.
+    func snappedDate(from date: Date, precision: DatePrecision) -> Date {
+        let cal = Calendar.current
+        switch precision {
+        case .year:
+            return cal.dateInterval(of: .year, for: date)!.start
+        case .month:
+            return cal.dateInterval(of: .month, for: date)!.start
+        case .day:
+            return cal.startOfDay(for: date)
+        case .time:
+            let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+            return cal.date(from: comps)!
+        }
+    }
 }
