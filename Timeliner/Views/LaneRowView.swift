@@ -12,6 +12,7 @@ struct LaneRowView: View {
     let showPointLabels: Bool
     let selectedEventID: UUID?
     let onSelectEvent: (TimelineEvent) -> Void
+    let onCreateEvent: (_ xPosition: CGFloat) -> Void
 
     private let baseRowHeight: CGFloat = 40
 
@@ -82,6 +83,13 @@ struct LaneRowView: View {
         }
         .frame(height: totalHeight)
         .clipped()
+        .contentShape(Rectangle())
+        .gesture(
+            SpatialTapGesture(count: 2)
+                .onEnded { value in
+                    onCreateEvent(value.location.x)
+                }
+        )
     }
 
     private var laneStrokeColor: Color {
@@ -106,7 +114,8 @@ struct LaneRowView: View {
         viewport: TimelineViewport(),
         showPointLabels: false,
         selectedEventID: nil,
-        onSelectEvent: { _ in }
+        onSelectEvent: { _ in },
+        onCreateEvent: { _ in }
     )
     .frame(width: 600)
 }

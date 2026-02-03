@@ -11,6 +11,8 @@ struct TimelineCanvasView: View {
     @Query private var unassignedEvents: [TimelineEvent]
     @Query private var allEvents: [TimelineEvent]
 
+    @Environment(\.modelContext) private var modelContext
+
     @Binding var fitToContent: Bool
     @Binding var showPointLabels: Bool
 
@@ -52,6 +54,9 @@ struct TimelineCanvasView: View {
                                 selectedEventID: selectedEventID,
                                 onSelectEvent: { event in
                                     selectedEventID = event.id
+                                },
+                                onCreateEvent: { xPosition in
+                                    createPointEvent(at: xPosition, in: lane, viewportWidth: geometry.size.width)
                                 }
                             )
                         }
@@ -257,6 +262,19 @@ struct TimelineCanvasView: View {
                 viewport.scale = max(1, viewport.scale * factor)
                 clampViewport()
             }
+    }
+
+    private func createPointEvent(at xPosition: CGFloat, in lane: Lane, viewportWidth: CGFloat) {
+        let vp = viewportWithWidth(viewportWidth)
+        let precision = vp.currentPrecision()
+        let rawDate = vp.date(forX: xPosition)
+        let snapped = vp.snappedDate(from: rawDate, precision: precision)
+        let fd = flexibleDate(from: snapped, precision: precision)
+        let title = titleForDate(snapped, precision: precision)
+
+        let event = TimelineEvent(title: title, startDate: fd, lane: lane)
+        modelContext.insert(event)
+        selectedEventID = event.id
     }
 }
 
