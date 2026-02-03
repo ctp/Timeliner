@@ -50,8 +50,14 @@ struct FlexibleDateEditor: View {
                 syncFromBinding(newValue)
             }
 
-            Stepper("Year: \(year, format: .number.grouping(.never))", value: $year, in: 1...9999)
-                .onChange(of: year) { _, _ in writeBack() }
+            LabeledContent("Year") {
+                HStack {
+                    Text(year, format: .number.grouping(.never))
+                    Stepper("", value: $year, in: 1...9999)
+                        .labelsHidden()
+                }
+            }
+            .onChange(of: year) { _, _ in writeBack() }
 
             if precision >= .month {
                 Picker("Month", selection: $month) {
