@@ -274,6 +274,7 @@ struct TimelineCanvasView: View {
 
         let event = TimelineEvent(title: title, startDate: fd, lane: lane)
         modelContext.insert(event)
+        try? modelContext.save()
         selectedEventID = event.id
     }
 }
