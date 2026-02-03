@@ -102,9 +102,14 @@ struct TimelineCanvasView: View {
         }
         .background(Color(nsColor: .textBackgroundColor))
         .inspector(isPresented: $showInspector) {
-            Text("Inspector placeholder")
+            EventInspectorView(event: selectedEvent)
                 .inspectorColumnWidth(min: 250, ideal: 300, max: 400)
         }
+    }
+
+    private var selectedEvent: TimelineEvent? {
+        guard let id = selectedEventID else { return nil }
+        return allEvents.first { $0.id == id }
     }
 
     private func viewportWithWidth(_ width: CGFloat) -> TimelineViewport {
@@ -282,6 +287,7 @@ struct TimelineCanvasView: View {
         modelContext.insert(event)
         try? modelContext.save()
         selectedEventID = event.id
+        showInspector = true
     }
 }
 
