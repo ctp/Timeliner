@@ -63,6 +63,9 @@ struct TimelineCanvasView: View {
                                 },
                                 onCreateEvent: { xPosition in
                                     createPointEvent(at: xPosition, in: lane, viewportWidth: geometry.size.width)
+                                },
+                                onDragEnd: { event, newStart, newEnd in
+                                    applyDrag(event: event, newStart: newStart, newEnd: newEnd)
                                 }
                             )
                         }
@@ -194,7 +197,10 @@ struct TimelineCanvasView: View {
                     rowHeight: totalHeight,
                     labelPosition: labelPositions[item.event.id] ?? .none,
                     labelXOffset: labelOffsets[item.event.id] ?? 0,
-                    yOffset: topPadding
+                    yOffset: topPadding,
+                    onDragEnd: { event, newStart, newEnd in
+                        applyDrag(event: event, newStart: newStart, newEnd: newEnd)
+                    }
                 )
             }
         }
@@ -341,6 +347,12 @@ struct TimelineCanvasView: View {
         try? modelContext.save()
         selectedEventID = event.id
         showInspector = true
+    }
+
+    private func applyDrag(event: TimelineEvent, newStart: FlexibleDate, newEnd: FlexibleDate?) {
+        event.startDate = newStart
+        event.endDate = newEnd
+        try? modelContext.save()
     }
 }
 

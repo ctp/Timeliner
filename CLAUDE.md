@@ -132,6 +132,8 @@ Implemented:
 - ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans, point events, and Important/Milestone tags
 - ✅ Point event creation: double-click on lane row to create a point event with zoom-appropriate precision and auto-generated title from date
 - ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with segmented precision picker (Year|Month|Day|Time) for FlexibleDate fields; auto-opens on event creation; changing start date shifts end date to preserve duration; end date clamped to at least one day after start; FlexibleDateEditor syncs from external binding changes
+- ✅ Menu event creation: File > New Point Event (⌘E) and New Span Event (⇧⌘E); places at viewport center, uses selected event's lane (fallback to first lane); span default durations vary by precision (time: +4h, day: +7d, month: +3mo, year: +5yr); auto-selects and opens inspector
+- ✅ Event dragging: drag point or span events to move them in time; drag left/right edges of spans to resize (change start/end date); 6pt edge hit zones for resize detection; dates snap to event's own precision on commit; minimum duration of one precision unit enforced; global coordinate space for jitter-free dragging; GeometryReader-based edge detection for spans
 
 ## Future Work (Out of Scope for v1)
 
@@ -156,6 +158,7 @@ These were explicitly deferred but the model accommodates them:
 - `docs/plans/2026-02-02-point-event-creation.md` - Implementation plan for point event creation (completed)
 - `docs/plans/2026-02-02-event-inspector-design.md` - Design for event inspector panel
 - `docs/plans/2026-02-02-event-inspector.md` - Implementation plan for event inspector (completed)
+- `docs/plans/2026-02-02-event-dragging-design.md` - Design for event dragging (move and resize)
 
 ## Git Remote
 

@@ -13,6 +13,7 @@ struct LaneRowView: View {
     let selectedEventID: UUID?
     let onSelectEvent: (TimelineEvent) -> Void
     let onCreateEvent: (_ xPosition: CGFloat) -> Void
+    var onDragEnd: ((TimelineEvent, FlexibleDate, FlexibleDate?) -> Void)?
 
     private let baseRowHeight: CGFloat = 40
 
@@ -77,7 +78,8 @@ struct LaneRowView: View {
                     rowHeight: totalHeight,
                     labelPosition: labelPositions[item.event.id] ?? .none,
                     labelXOffset: labelOffsets[item.event.id] ?? 0,
-                    yOffset: topPadding
+                    yOffset: topPadding,
+                    onDragEnd: onDragEnd
                 )
             }
         }
