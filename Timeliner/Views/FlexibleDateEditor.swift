@@ -46,6 +46,9 @@ struct FlexibleDateEditor: View {
             }
             .pickerStyle(.segmented)
             .onChange(of: precision) { _, _ in writeBack() }
+            .onChange(of: flexibleDate) { _, newValue in
+                syncFromBinding(newValue)
+            }
 
             Stepper("Year: \(year, format: .number.grouping(.never))", value: $year, in: 1...9999)
                 .onChange(of: year) { _, _ in writeBack() }
@@ -100,6 +103,16 @@ struct FlexibleDateEditor: View {
     private func clampDay() {
         let maxDay = daysInMonth()
         if day > maxDay { day = maxDay }
+    }
+
+    private func syncFromBinding(_ fd: FlexibleDate) {
+        let display = fd.localDisplayComponents
+        precision = fd.precision
+        year = display.year
+        month = display.month
+        day = display.day
+        hour = display.hour
+        minute = display.minute
     }
 
     private func writeBack() {

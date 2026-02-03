@@ -49,14 +49,21 @@ private struct EventDetailForm: View {
             }
 
             FlexibleDateEditor(label: "Start Date", flexibleDate: $startDate)
-                .onChange(of: startDate) { _, newValue in
+                .onChange(of: startDate) { oldValue, newValue in
+                    let shift = newValue.asDate.timeIntervalSince(oldValue.asDate)
                     event.startDate = newValue
+                    if hasEndDate {
+                        let newEnd = endDate.asDate.addingTimeInterval(shift)
+                        endDate = clampEndDate(FlexibleDate(from: newEnd, precision: endDate.precision))
+                        event.endDate = endDate
+                    }
                 }
 
             Section("End Date") {
                 Toggle("Has end date", isOn: $hasEndDate)
                     .onChange(of: hasEndDate) { _, on in
                         if on {
+                            endDate = clampEndDate(endDate)
                             event.endDate = endDate
                         } else {
                             event.endDate = nil
@@ -67,10 +74,25 @@ private struct EventDetailForm: View {
             if hasEndDate {
                 FlexibleDateEditor(label: "End Date", flexibleDate: $endDate)
                     .onChange(of: endDate) { _, newValue in
-                        event.endDate = newValue
+                        let clamped = clampEndDate(newValue)
+                        if clamped != newValue {
+                            endDate = clamped
+                        }
+                        event.endDate = endDate
                     }
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var minimumEndDate: Date {
+        Calendar.current.date(byAdding: .day, value: 1, to: startDate.asDate) ?? startDate.asDate
+    }
+
+    private func clampEndDate(_ candidate: FlexibleDate) -> FlexibleDate {
+        if candidate.asDate < minimumEndDate {
+            return FlexibleDate(from: minimumEndDate, precision: candidate.precision)
+        }
+        return candidate
     }
 }

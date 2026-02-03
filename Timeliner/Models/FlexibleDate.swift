@@ -48,6 +48,28 @@ struct FlexibleDate: Codable, Hashable, Sendable {
         self.minute = minute
     }
 
+    /// Create a FlexibleDate from a Foundation Date at the given precision.
+    ///
+    /// Time precision stores UTC components; day and coarser store local calendar values.
+    init(from date: Date, precision: DatePrecision) {
+        if precision >= .time {
+            var utcCal = Calendar(identifier: .gregorian)
+            utcCal.timeZone = TimeZone(identifier: "UTC")!
+            self.year = utcCal.component(.year, from: date)
+            self.month = utcCal.component(.month, from: date)
+            self.day = utcCal.component(.day, from: date)
+            self.hour = utcCal.component(.hour, from: date)
+            self.minute = utcCal.component(.minute, from: date)
+        } else {
+            let cal = Calendar.current
+            self.year = cal.component(.year, from: date)
+            self.month = precision >= .month ? cal.component(.month, from: date) : nil
+            self.day = precision >= .day ? cal.component(.day, from: date) : nil
+            self.hour = nil
+            self.minute = nil
+        }
+    }
+
     /// Create a time-precision FlexibleDate from local time components.
     /// Converts the local hour/minute to UTC for storage.
     static func fromLocalTime(year: Int, month: Int, day: Int, hour: Int, minute: Int = 0) -> FlexibleDate {
