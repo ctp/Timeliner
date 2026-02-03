@@ -12,6 +12,7 @@ struct EventInspectorView: View {
         Group {
             if let event {
                 EventDetailForm(event: event)
+                    .id(event.id)
             } else {
                 ContentUnavailableView("No Selection", systemImage: "calendar", description: Text("Select an event to edit"))
             }

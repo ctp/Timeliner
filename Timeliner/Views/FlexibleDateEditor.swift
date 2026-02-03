@@ -36,7 +36,7 @@ struct FlexibleDateEditor: View {
     var body: some View {
         Section(label) {
             // Year — always shown
-            Stepper("Year: \(year)", value: $year, in: 1...9999)
+            Stepper("Year: \(year, format: .number.grouping(.never))", value: $year, in: 1...9999)
                 .onChange(of: year) { _, _ in writeBack() }
 
             // Month toggle + picker

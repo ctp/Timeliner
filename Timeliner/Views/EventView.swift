@@ -16,8 +16,6 @@ struct EventView: View {
     var labelXOffset: CGFloat = 0
     var yOffset: CGFloat = 0
 
-    @State private var isHovered = false
-
     private let eventHeight: CGFloat = 24
     private let baseRowHeight: CGFloat = 40
 
@@ -36,16 +34,10 @@ struct EventView: View {
     private func eventInteractions<V: View>(_ content: V) -> some View {
         content
             .contentShape(Rectangle())
-            .onHover { hovering in
-                isHovered = hovering
-            }
-            .popover(isPresented: $isHovered, arrowEdge: .bottom) {
-                tooltipView
-                    .padding(8)
-            }
             .onTapGesture {
                 onSelect()
             }
+            .help(event.title)
     }
 
     private var pointEventView: some View {
@@ -126,53 +118,6 @@ struct EventView: View {
                 .frame(width: width, height: eventHeight)
         )
         .position(x: startX + width / 2, y: yCenter)
-    }
-
-    private var tooltipView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(event.title)
-                .font(.headline)
-
-            if let desc = event.eventDescription, !desc.isEmpty {
-                Text(desc)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-
-            if event.isPointEvent {
-                Text("**Date:** \(formatted(event.startDate))")
-            } else {
-                Text("**Start:** \(formatted(event.startDate))")
-            }
-
-            if let end = event.endDate {
-                Text("**End:** \(formatted(end))")
-            }
-
-            if !event.tags.isEmpty {
-                let tagNames = event.tags.map(\.name).joined(separator: ", ")
-                Text("**Tags:** \(tagNames)")
-            }
-        }
-        .font(.callout)
-    }
-
-    private func formatted(_ date: FlexibleDate) -> String {
-        switch date.precision {
-        case .year:
-            return "\(date.year)"
-        case .month:
-            let m = date.month ?? 1
-            return String(format: "%04d-%02d", date.year, m)
-        case .day:
-            let m = date.month ?? 1
-            let d = date.day ?? 1
-            return String(format: "%04d-%02d-%02d", date.year, m, d)
-        case .time:
-            let local = date.localDisplayComponents
-            return String(format: "%04d-%02d-%02d %02d:%02d",
-                          local.year, local.month, local.day, local.hour, local.minute)
-        }
     }
 
     private var eventColor: Color {
