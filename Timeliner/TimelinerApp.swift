@@ -23,8 +23,25 @@ struct TimelineCommands: Commands {
     @FocusedBinding(\.fitToContent) private var fitToContent
     @FocusedBinding(\.showPointLabels) private var showPointLabels
     @FocusedBinding(\.showInspector) private var showInspector
+    @FocusedBinding(\.createPointEvent) private var createPointEvent
+    @FocusedBinding(\.createSpanEvent) private var createSpanEvent
 
     var body: some Commands {
+        CommandGroup(after: .newItem) {
+            Divider()
+            Button("New Point Event") {
+                createPointEvent = true
+            }
+            .keyboardShortcut("e", modifiers: .command)
+            .disabled(createPointEvent == nil)
+
+            Button("New Span Event") {
+                createSpanEvent = true
+            }
+            .keyboardShortcut("e", modifiers: [.command, .shift])
+            .disabled(createSpanEvent == nil)
+        }
+
         CommandGroup(after: .toolbar) {
             Button("Fit to Content") {
                 fitToContent = true

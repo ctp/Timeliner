@@ -18,6 +18,14 @@ struct ShowInspectorKey: FocusedValueKey {
     typealias Value = Binding<Bool>
 }
 
+struct CreatePointEventKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
+struct CreateSpanEventKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
 extension FocusedValues {
     var fitToContent: Binding<Bool>? {
         get { self[FitToContentKey.self] }
@@ -33,6 +41,16 @@ extension FocusedValues {
         get { self[ShowInspectorKey.self] }
         set { self[ShowInspectorKey.self] = newValue }
     }
+
+    var createPointEvent: Binding<Bool>? {
+        get { self[CreatePointEventKey.self] }
+        set { self[CreatePointEventKey.self] = newValue }
+    }
+
+    var createSpanEvent: Binding<Bool>? {
+        get { self[CreateSpanEventKey.self] }
+        set { self[CreateSpanEventKey.self] = newValue }
+    }
 }
 
 struct ContentView: View {
@@ -41,6 +59,8 @@ struct ContentView: View {
     @State private var fitToContent = false
     @State private var showPointLabels = false
     @State private var showInspector = false
+    @State private var createPointEvent = false
+    @State private var createSpanEvent = false
 
     var body: some View {
         NavigationSplitView {
@@ -59,7 +79,7 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, createPointEvent: $createPointEvent, createSpanEvent: $createSpanEvent)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -81,6 +101,8 @@ struct ContentView: View {
         .focusedSceneValue(\.fitToContent, $fitToContent)
         .focusedSceneValue(\.showPointLabels, $showPointLabels)
         .focusedSceneValue(\.showInspector, $showInspector)
+        .focusedSceneValue(\.createPointEvent, $createPointEvent)
+        .focusedSceneValue(\.createSpanEvent, $createSpanEvent)
     }
 
     private func addSampleData() {
