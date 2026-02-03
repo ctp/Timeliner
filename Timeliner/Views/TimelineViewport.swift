@@ -76,3 +76,39 @@ struct TimelineViewport: Equatable, Hashable, Sendable {
         }
     }
 }
+
+/// Convert a Foundation Date to a FlexibleDate at the given precision.
+/// For `.time` precision, uses `FlexibleDate.fromLocalTime(...)` for correct UTC storage.
+func flexibleDate(from date: Date, precision: DatePrecision) -> FlexibleDate {
+    let cal = Calendar.current
+    let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+    switch precision {
+    case .year:
+        return FlexibleDate(year: comps.year!)
+    case .month:
+        return FlexibleDate(year: comps.year!, month: comps.month!)
+    case .day:
+        return FlexibleDate(year: comps.year!, month: comps.month!, day: comps.day!)
+    case .time:
+        return FlexibleDate.fromLocalTime(
+            year: comps.year!, month: comps.month!, day: comps.day!,
+            hour: comps.hour!, minute: comps.minute!
+        )
+    }
+}
+
+/// Generate an auto-title for an event at the given date and precision.
+func titleForDate(_ date: Date, precision: DatePrecision) -> String {
+    let formatter = DateFormatter()
+    switch precision {
+    case .year:
+        formatter.dateFormat = "yyyy"
+    case .month:
+        formatter.dateFormat = "MMM yyyy"
+    case .day:
+        formatter.dateFormat = "MMM d, yyyy"
+    case .time:
+        formatter.dateFormat = "MMM d, h:mm a"
+    }
+    return formatter.string(from: date)
+}

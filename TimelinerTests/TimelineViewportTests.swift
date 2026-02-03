@@ -131,3 +131,87 @@ struct TimelineViewportTests {
         #expect(result.minute == 37)
     }
 }
+
+struct EventCreationHelperTests {
+
+    @Test func flexibleDateYearPrecision() {
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 1; comps.day = 1
+        let date = Calendar.current.date(from: comps)!
+        let fd = flexibleDate(from: date, precision: .year)
+        #expect(fd.year == 2024)
+        #expect(fd.month == nil)
+        #expect(fd.day == nil)
+        #expect(fd.hour == nil)
+        #expect(fd.precision == .year)
+    }
+
+    @Test func flexibleDateMonthPrecision() {
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 1
+        let date = Calendar.current.date(from: comps)!
+        let fd = flexibleDate(from: date, precision: .month)
+        #expect(fd.year == 2024)
+        #expect(fd.month == 7)
+        #expect(fd.day == nil)
+        #expect(fd.precision == .month)
+    }
+
+    @Test func flexibleDateDayPrecision() {
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 15
+        let date = Calendar.current.date(from: comps)!
+        let fd = flexibleDate(from: date, precision: .day)
+        #expect(fd.year == 2024)
+        #expect(fd.month == 7)
+        #expect(fd.day == 15)
+        #expect(fd.hour == nil)
+        #expect(fd.precision == .day)
+    }
+
+    @Test func flexibleDateTimePrecision() {
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 15; comps.hour = 14; comps.minute = 30
+        let date = Calendar.current.date(from: comps)!
+        let fd = flexibleDate(from: date, precision: .time)
+        // Should round-trip through localDisplayComponents back to local time
+        let display = fd.localDisplayComponents
+        #expect(display.year == 2024)
+        #expect(display.month == 7)
+        #expect(display.day == 15)
+        #expect(display.hour == 14)
+        #expect(display.minute == 30)
+    }
+
+    @Test func titleForDateYear() {
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 1; comps.day = 1
+        let date = Calendar.current.date(from: comps)!
+        let title = titleForDate(date, precision: .year)
+        #expect(title == "2024")
+    }
+
+    @Test func titleForDateMonth() {
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 1
+        let date = Calendar.current.date(from: comps)!
+        let title = titleForDate(date, precision: .month)
+        #expect(title == "Jul 2024")
+    }
+
+    @Test func titleForDateDay() {
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 15
+        let date = Calendar.current.date(from: comps)!
+        let title = titleForDate(date, precision: .day)
+        #expect(title == "Jul 15, 2024")
+    }
+
+    @Test func titleForDateTime() {
+        var comps = DateComponents()
+        comps.year = 2024; comps.month = 7; comps.day = 15; comps.hour = 14; comps.minute = 30
+        let date = Calendar.current.date(from: comps)!
+        let title = titleForDate(date, precision: .time)
+        #expect(title == "Jul 15, 2:30 PM")
+    }
+}
