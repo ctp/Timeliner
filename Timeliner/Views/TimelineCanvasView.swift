@@ -15,6 +15,7 @@ struct TimelineCanvasView: View {
 
     @Binding var fitToContent: Bool
     @Binding var showPointLabels: Bool
+    @Binding var showInspector: Bool
 
     @State private var viewport: TimelineViewport
     @State private var selectedEventID: UUID?
@@ -22,9 +23,10 @@ struct TimelineCanvasView: View {
     @State private var dragStartCenter: Date?
     @State private var hasAutoFitted = false
 
-    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>) {
+    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>) {
         _fitToContent = fitToContent
         _showPointLabels = showPointLabels
+        _showInspector = showInspector
         _viewport = State(initialValue: TimelineViewport(
             centerDate: Date(),
             scale: 86400 * 30, // ~1 month per point initially
@@ -99,6 +101,10 @@ struct TimelineCanvasView: View {
             }
         }
         .background(Color(nsColor: .textBackgroundColor))
+        .inspector(isPresented: $showInspector) {
+            Text("Inspector placeholder")
+                .inspectorColumnWidth(min: 250, ideal: 300, max: 400)
+        }
     }
 
     private func viewportWithWidth(_ width: CGFloat) -> TimelineViewport {
@@ -280,7 +286,7 @@ struct TimelineCanvasView: View {
 }
 
 #Preview {
-    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false))
+    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false))
         .modelContainer(for: [TimelineEvent.self, Lane.self, Tag.self], inMemory: true)
         .frame(width: 800, height: 400)
 }

@@ -14,6 +14,10 @@ struct ShowPointLabelsKey: FocusedValueKey {
     typealias Value = Binding<Bool>
 }
 
+struct ShowInspectorKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
 extension FocusedValues {
     var fitToContent: Binding<Bool>? {
         get { self[FitToContentKey.self] }
@@ -24,6 +28,11 @@ extension FocusedValues {
         get { self[ShowPointLabelsKey.self] }
         set { self[ShowPointLabelsKey.self] = newValue }
     }
+
+    var showInspector: Binding<Bool>? {
+        get { self[ShowInspectorKey.self] }
+        set { self[ShowInspectorKey.self] = newValue }
+    }
 }
 
 struct ContentView: View {
@@ -31,6 +40,7 @@ struct ContentView: View {
     @State private var activeTagFilters: Set<UUID> = []
     @State private var fitToContent = false
     @State private var showPointLabels = false
+    @State private var showInspector = false
 
     var body: some View {
         NavigationSplitView {
@@ -49,9 +59,14 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector)
         }
         .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button(action: { showInspector.toggle() }) {
+                    Label("Inspector", systemImage: showInspector ? "info.circle.fill" : "info.circle")
+                }
+            }
             ToolbarItem(placement: .automatic) {
                 Button(action: { showPointLabels.toggle() }) {
                     Label("Show Point Labels", systemImage: showPointLabels ? "tag.fill" : "tag")
@@ -65,6 +80,7 @@ struct ContentView: View {
         }
         .focusedSceneValue(\.fitToContent, $fitToContent)
         .focusedSceneValue(\.showPointLabels, $showPointLabels)
+        .focusedSceneValue(\.showInspector, $showInspector)
     }
 
     private func addSampleData() {

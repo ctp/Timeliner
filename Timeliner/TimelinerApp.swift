@@ -22,6 +22,7 @@ struct TimelinerApp: App {
 struct TimelineCommands: Commands {
     @FocusedBinding(\.fitToContent) private var fitToContent
     @FocusedBinding(\.showPointLabels) private var showPointLabels
+    @FocusedBinding(\.showInspector) private var showInspector
 
     var body: some Commands {
         CommandGroup(after: .toolbar) {
@@ -37,6 +38,13 @@ struct TimelineCommands: Commands {
             ))
             .keyboardShortcut("l", modifiers: .command)
             .disabled(showPointLabels == nil)
+
+            Toggle("Show Inspector", isOn: Binding(
+                get: { showInspector ?? false },
+                set: { showInspector = $0 }
+            ))
+            .keyboardShortcut("i", modifiers: .command)
+            .disabled(showInspector == nil)
         }
     }
 }
