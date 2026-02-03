@@ -52,6 +52,7 @@ ContentView
 │           ├── TimeAxisView      # Time ruler with adaptive ticks
 │           ├── LaneRowView[]     # One per lane, dynamic height via overlap layout
 │           │   └── EventView[]   # Point (dot) or span (bar), with hover popovers
+│           ├── .inspector()       # EventInspectorView (trailing panel, ⌘I)
 │           └── Gesture handlers  # Pan and zoom, fit-to-content
 ```
 
@@ -78,6 +79,8 @@ Timeliner/
 │   ├── TimeAxisView.swift
 │   ├── EventView.swift
 │   ├── LaneRowView.swift
+│   ├── EventInspectorView.swift  # Trailing inspector for editing events
+│   ├── FlexibleDateEditor.swift  # Reusable progressive date fields
 │   └── Sidebar/
 │       ├── LaneListView.swift
 │       └── TagListView.swift
@@ -128,12 +131,13 @@ Implemented:
 - ✅ Point event labels: toggled via View > Show Point Labels (⌘L) and toolbar button, with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
 - ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans, point events, and Important/Milestone tags
 - ✅ Point event creation: double-click on lane row to create a point event with zoom-appropriate precision and auto-generated title from date
+- ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with progressive FlexibleDate fields (year→month→day→time); auto-opens on event creation
 
 ## Future Work (Out of Scope for v1)
 
 These were explicitly deferred but the model accommodates them:
 
-1. **Event Editing UI** - Can create point events via double-click; no way to edit or delete events yet
+1. **Event Editing UI** - Can create and edit events (title, description, dates); no deletion, lane reassignment, or tag editing yet
 2. **Attachments** - Images, files, links (Attachments/ directory reserved in doc package)
 3. **Event Relationships** - Links between events (causal, sequential)
 4. **Vertical Orientation** - Alternative timeline layout
@@ -150,6 +154,8 @@ These were explicitly deferred but the model accommodates them:
 - `docs/plans/2026-02-01-extract-timeline-layout-engine.md` - Plan to extract duplicated layout code into shared TimelineLayoutEngine (completed)
 - `docs/plans/2026-02-02-point-event-creation-design.md` - Design for double-click point event creation
 - `docs/plans/2026-02-02-point-event-creation.md` - Implementation plan for point event creation (completed)
+- `docs/plans/2026-02-02-event-inspector-design.md` - Design for event inspector panel
+- `docs/plans/2026-02-02-event-inspector.md` - Implementation plan for event inspector (completed)
 
 ## Git Remote
 
