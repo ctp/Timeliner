@@ -136,7 +136,7 @@ Implemented:
 - ✅ Point event labels: toggled via View > Show Point Labels (⌘L) and toolbar button, with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
 - ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans and point events
 - ✅ Point event creation: double-click on lane row to create a point event with zoom-appropriate precision and auto-generated title from date
-- ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with segmented precision picker (Year|Month|Day|Time) for FlexibleDate fields; auto-opens on event creation; changing start date shifts end date to preserve duration; end date clamped to at least one day after start; FlexibleDateEditor syncs from external binding changes
+- ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with segmented precision picker (Year|Month|Day|Time) for FlexibleDate fields; lane reassignment via Picker (with colored circles); delete button with confirmation dialog; auto-opens on event creation; changing start date shifts end date to preserve duration; end date clamped to at least one day after start; FlexibleDateEditor syncs from external binding changes
 - ✅ Menu event creation: File > New Point Event (⌘E) and New Span Event (⇧⌘E); places at viewport center, uses selected event's lane (fallback to first lane); span default durations vary by precision (time: +4h, day: +7d, month: +3mo, year: +5yr); auto-selects and opens inspector
 - ✅ Event dragging: drag point or span events to move them in time; drag left/right edges of spans to resize (change start/end date); 6pt edge hit zones for resize detection; dates snap to event's own precision on commit; minimum duration of one precision unit enforced; global coordinate space for jitter-free dragging; GeometryReader-based edge detection for spans
 - ✅ AppleScript support: full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). **Known limitation:** `save`, `close`, and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
@@ -145,14 +145,13 @@ Implemented:
 
 These were explicitly deferred but the model accommodates them:
 
-1. **Event Editing UI** - Can create and edit events (title, description, dates); no deletion or lane reassignment yet
-2. **Attachments** - Images, files, links (Attachments/ directory reserved in doc package)
-3. **Event Relationships** - Links between events (causal, sequential)
-4. **Vertical Orientation** - Alternative timeline layout
-5. **Collapsible Lanes** - Expand/collapse for focus
-6. **Minimap** - Overview navigation for large timelines
-7. **Lane Color Picker** - Currently hardcoded; needs UI for user selection
-8. **Search** - Find events by title/description
+1. **Attachments** - Images, files, links (Attachments/ directory reserved in doc package)
+2. **Event Relationships** - Links between events (causal, sequential)
+3. **Vertical Orientation** - Alternative timeline layout
+4. **Collapsible Lanes** - Expand/collapse for focus
+5. **Minimap** - Overview navigation for large timelines
+6. **Lane Color Picker** - Currently hardcoded; needs UI for user selection
+7. **Search** - Find events by title/description
 
 ## Design Documents
 
