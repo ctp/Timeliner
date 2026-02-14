@@ -152,6 +152,7 @@ These were explicitly deferred but the model accommodates them:
 4. **Collapsible Lanes** - Expand/collapse for focus
 5. **Minimap** - Overview navigation for large timelines
 6. **Search** - Find events by title/description
+7. **Eras / Periods** - Cross-lane date ranges that span all lanes (e.g. "Renaissance", "Q3 2025"); rendered as a background band or overlay across the full timeline height, distinct from per-lane events
 
 ## Design Documents
 
