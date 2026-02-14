@@ -83,7 +83,7 @@ class ScriptableLane: NSObject {
     override var objectSpecifier: NSScriptObjectSpecifier? {
         guard let doc = document else { return nil }
         guard let docSpecifier = doc.objectSpecifier else { return nil }
-        guard let docClassDescription = doc.classDescription as? NSScriptClassDescription else { return nil }
+        guard let docClassDescription = NSScriptClassDescription(for: type(of: doc)) else { return nil }
 
         return NSNameSpecifier(
             containerClassDescription: docClassDescription,

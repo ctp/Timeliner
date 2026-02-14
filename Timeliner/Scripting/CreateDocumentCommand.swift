@@ -7,71 +7,117 @@ import AppKit
 import Foundation
 import SwiftData
 
-/// Custom `make` command that intercepts document creation while delegating
-/// lane/event creation to the standard NSCreateCommand machinery.
+/// Custom `make` command that handles creation of all Timeliner objects.
 ///
-/// Documents require special handling because SwiftUI's DocumentGroup manages
-/// document lifecycle — we must create documents via NSDocumentController
-/// rather than simple alloc/init.
+/// We bypass NSCreateCommand's default alloc/init flow entirely for lanes and
+/// events because that flow creates scriptable wrappers with throwaway
+/// ModelContexts and nil document references, causing `objectSpecifier` to
+/// return nil (which becomes `missing value` in AppleScript).
+///
+/// Instead, we create the SwiftData model objects directly, insert them into
+/// the target document's ModelContext, and return proper object specifiers.
 @MainActor
 @objc(TimelinerCreateCommand)
 class TimelinerCreateCommand: NSCreateCommand {
     override func performDefaultImplementation() -> Any? {
         let className = createClassDescription.className
 
-        if className == "document" {
+        switch className {
+        case "document":
             return createDocument()
+        case "lane":
+            return createLane()
+        case "timeline event":
+            return createTimelineEvent()
+        default:
+            return super.performDefaultImplementation()
         }
-
-        // For lanes and events, NSCreateCommand calls alloc/init (with a throwaway
-        // ModelContext), sets properties via KVC, then inserts into the container.
-        // The object that comes back has a stale document reference, so we look up
-        // the real wrapper from the document after insertion.
-        let result = super.performDefaultImplementation()
-
-        // Try to return a proper object specifier for the newly created object
-        if let lane = result as? ScriptableLane {
-            return resolveInsertedLane(lane)
-        }
-        if let event = result as? ScriptableEvent {
-            return resolveInsertedEvent(event)
-        }
-
-        return result
     }
 
-    /// After NSCreateCommand inserts a ScriptableLane, look up the real wrapper
-    /// from the document so its objectSpecifier has the correct parent.
-    private func resolveInsertedLane(_ placeholder: ScriptableLane) -> Any? {
-        // Find the document container from the receivers specifier
-        guard let containerSpecifier = receiversSpecifier,
-              let containers = containerSpecifier.objectsByEvaluatingSpecifier as? [ScriptableDocument],
-              let doc = containers.first else {
-            return placeholder.objectSpecifier
+    // MARK: - Lane Creation
+
+    private func createLane() -> Any? {
+        guard let doc = resolveTargetDocument() else {
+            scriptErrorNumber = -1
+            scriptErrorString = "Could not find target document for lane creation."
+            return nil
         }
 
-        // Find the lane we just created by matching name (properties were already set)
-        let name = placeholder.lane.name
-        if let real = doc.lanes.first(where: { $0.name == name }) {
-            return real.objectSpecifier
-        }
-        return placeholder.objectSpecifier
+        let lane = Lane(name: "Untitled Lane", color: "#999999", sortOrder: 0)
+
+        let properties = resolvedKeyDictionary
+        if let name = properties["name"] as? String { lane.name = name }
+        if let color = properties["color"] as? String { lane.color = color }
+        if let sortOrder = properties["sortOrder"] as? Int { lane.sortOrder = sortOrder }
+
+        doc.modelContext.insert(lane)
+
+        let wrapper = ScriptableLane(lane: lane, context: doc.modelContext, document: doc)
+        return wrapper.objectSpecifier
     }
 
-    /// After NSCreateCommand inserts a ScriptableEvent, look up the real wrapper.
-    private func resolveInsertedEvent(_ placeholder: ScriptableEvent) -> Any? {
-        guard let containerSpecifier = receiversSpecifier,
-              let containers = containerSpecifier.objectsByEvaluatingSpecifier as? [ScriptableDocument],
-              let doc = containers.first else {
-            return placeholder.objectSpecifier
+    // MARK: - Event Creation
+
+    private func createTimelineEvent() -> Any? {
+        guard let doc = resolveTargetDocument() else {
+            scriptErrorNumber = -1
+            scriptErrorString = "Could not find target document for event creation."
+            return nil
         }
 
-        let id = placeholder.event.id.uuidString
-        if let real = doc.events.first(where: { $0.uniqueID == id }) {
-            return real.objectSpecifier
+        let event = TimelineEvent(
+            title: "Untitled Event",
+            startDate: FlexibleDate(year: Calendar.current.component(.year, from: Date()))
+        )
+
+        let properties = resolvedKeyDictionary
+        if let title = properties["title"] as? String { event.title = title }
+        if let desc = properties["eventDescription"] as? String {
+            event.eventDescription = desc.isEmpty ? nil : desc
         }
-        return placeholder.objectSpecifier
+        if let startStr = properties["startDateString"] as? String,
+           let d = FlexibleDate(isoString: startStr) {
+            event.startDate = d
+        }
+        if let endStr = properties["endDateString"] as? String, !endStr.isEmpty,
+           let d = FlexibleDate(isoString: endStr) {
+            event.endDate = d
+        }
+        if let laneWrapper = properties["scriptableLane"] as? ScriptableLane {
+            event.lane = laneWrapper.lane
+        }
+
+        doc.modelContext.insert(event)
+
+        let wrapper = ScriptableEvent(event: event, context: doc.modelContext, document: doc)
+        return wrapper.objectSpecifier
     }
+
+    // MARK: - Target Document Resolution
+
+    /// Finds the target document for lane/event creation.
+    /// Checks the receivers specifier first (`tell document 1 ... make ...`),
+    /// then falls back to the first open document.
+    private func resolveTargetDocument() -> ScriptableDocument? {
+        if let spec = receiversSpecifier {
+            let evaluated = spec.objectsByEvaluatingSpecifier
+            if let doc = evaluated as? ScriptableDocument {
+                return doc
+            }
+            if let docs = evaluated as? [ScriptableDocument], let doc = docs.first {
+                return doc
+            }
+        }
+
+        // Fallback: first open document
+        if let entry = DocumentRegistry.shared.allEntries.first {
+            return ScriptableDocument(entry: entry)
+        }
+
+        return nil
+    }
+
+    // MARK: - Document Creation
 
     private func createDocument() -> Any? {
         let registry = DocumentRegistry.shared

@@ -88,7 +88,7 @@ class ScriptableEvent: NSObject {
     override var objectSpecifier: NSScriptObjectSpecifier? {
         guard let doc = document else { return nil }
         guard let docSpecifier = doc.objectSpecifier else { return nil }
-        guard let docClassDescription = doc.classDescription as? NSScriptClassDescription else { return nil }
+        guard let docClassDescription = NSScriptClassDescription(for: type(of: doc)) else { return nil }
 
         // Use unique ID specifier since event titles may not be unique
         return NSUniqueIDSpecifier(
