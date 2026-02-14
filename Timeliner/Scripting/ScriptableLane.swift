@@ -22,15 +22,6 @@ class ScriptableLane: NSObject {
         super.init()
     }
 
-    /// Init for Cocoa Scripting `make new lane with properties {...}`.
-    /// Creates a new Lane model with default values; properties are set via KVC after init.
-    @objc override convenience init() {
-        let lane = Lane(name: "Untitled Lane", color: "#999999", sortOrder: 0)
-        // Temporarily use a placeholder context — will be set properly on insertion
-        // The lane is not inserted into any context yet
-        self.init(lane: lane, context: ModelContext(try! ModelContainer(for: Lane.self, TimelineEvent.self)), document: nil)
-    }
-
     // MARK: - KVC Properties
 
     @objc var uniqueID: String {

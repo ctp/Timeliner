@@ -22,16 +22,6 @@ class ScriptableEvent: NSObject {
         super.init()
     }
 
-    /// Init for Cocoa Scripting `make new timeline event with properties {...}`.
-    /// Creates a new TimelineEvent with defaults; properties are set via KVC after init.
-    @objc override convenience init() {
-        let event = TimelineEvent(
-            title: "Untitled Event",
-            startDate: FlexibleDate(year: Calendar.current.component(.year, from: Date()))
-        )
-        self.init(event: event, context: ModelContext(try! ModelContainer(for: Lane.self, TimelineEvent.self)), document: nil)
-    }
-
     // MARK: - KVC Properties
 
     @objc var uniqueID: String {
