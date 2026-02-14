@@ -63,16 +63,25 @@ struct ContentView: View {
     @State private var createSpanEvent = false
     @State private var registryID: UUID?
     @State private var editingLane: Lane?
+    @State private var editingEra: Era?
 
     var body: some View {
         NavigationSplitView {
             List {
                 LaneListView(editingLane: $editingLane)
+                EraListView(editingEra: $editingEra)
             }
             .sheet(item: $editingLane) { lane in
                 LaneEditorSheet(lane: lane, onDone: { name, color in
                     lane.name = name
                     lane.color = color
+                })
+            }
+            .sheet(item: $editingEra) { era in
+                EraEditorSheet(era: era, onDone: { name, startDate, endDate in
+                    era.name = name
+                    era.startDate = startDate
+                    era.endDate = endDate
                 })
             }
             #if os(macOS)
@@ -318,11 +327,29 @@ struct ContentView: View {
             modelContext.insert(event)
         }
 
+        // ── Sample Eras ──
+
+        let sprintPhase = Era(
+            name: "Sprint Phase",
+            startDate: flexDay(today),
+            endDate: flexDay(dayDate(42)),
+            sortOrder: 0
+        )
+        let vacationSeason = Era(
+            name: "Vacation Season",
+            startDate: flexDay(dayDate(10)),
+            endDate: flexDay(dayDate(17)),
+            sortOrder: 1
+        )
+
+        modelContext.insert(sprintPhase)
+        modelContext.insert(vacationSeason)
+
         fitToContent = true
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: [TimelineEvent.self, Lane.self], inMemory: true)
+        .modelContainer(for: [TimelineEvent.self, Lane.self, Era.self], inMemory: true)
 }

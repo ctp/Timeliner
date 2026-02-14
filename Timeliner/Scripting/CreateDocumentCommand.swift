@@ -29,6 +29,8 @@ class TimelinerCreateCommand: NSCreateCommand {
             return createLane()
         case "timeline event":
             return createTimelineEvent()
+        case "era":
+            return createEra()
         default:
             return super.performDefaultImplementation()
         }
@@ -90,6 +92,39 @@ class TimelinerCreateCommand: NSCreateCommand {
         doc.modelContext.insert(event)
 
         let wrapper = ScriptableEvent(event: event, context: doc.modelContext, document: doc)
+        return wrapper.objectSpecifier
+    }
+
+    // MARK: - Era Creation
+
+    private func createEra() -> Any? {
+        guard let doc = resolveTargetDocument() else {
+            scriptErrorNumber = -1
+            scriptErrorString = "Could not find target document for era creation."
+            return nil
+        }
+
+        let era = Era(
+            name: "Untitled Era",
+            startDate: FlexibleDate(year: 2025),
+            endDate: FlexibleDate(year: 2026)
+        )
+
+        let properties = resolvedKeyDictionary
+        if let name = properties["name"] as? String { era.name = name }
+        if let startStr = properties["startDateString"] as? String,
+           let d = FlexibleDate(isoString: startStr) {
+            era.startDate = d
+        }
+        if let endStr = properties["endDateString"] as? String,
+           let d = FlexibleDate(isoString: endStr) {
+            era.endDate = d
+        }
+        if let sortOrder = properties["sortOrder"] as? Int { era.sortOrder = sortOrder }
+
+        doc.modelContext.insert(era)
+
+        let wrapper = ScriptableEra(era: era, context: doc.modelContext, document: doc)
         return wrapper.objectSpecifier
     }
 

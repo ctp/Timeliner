@@ -153,6 +153,9 @@
             <element type="timeline event" access="rw">
                 <cocoa key="events"/>
             </element>
+            <element type="era" access="rw">
+                <cocoa key="eras"/>
+            </element>
         </class-extension>
 
         <class name="lane" code="Lane" plural="lanes" description="A horizontal track that groups events visually.">
@@ -196,6 +199,25 @@
             </property>
             <property name="lane" code="evln" description="The lane this event belongs to." type="lane" access="rw">
                 <cocoa key="scriptableLane"/>
+            </property>
+        </class>
+
+        <class name="era" code="TEra" plural="eras" description="A cross-lane date range displayed as a background band.">
+            <cocoa class="ScriptableEra"/>
+            <property name="id" code="ID  " description="The unique identifier." type="text" access="r">
+                <cocoa key="uniqueID"/>
+            </property>
+            <property name="name" code="pnam" description="The era's display name." type="text" access="rw">
+                <cocoa key="name"/>
+            </property>
+            <property name="start date" code="esdt" description="The start date as a precision-inferred string." type="text" access="rw">
+                <cocoa key="startDateString"/>
+            </property>
+            <property name="end date" code="eedt" description="The end date as a precision-inferred string." type="text" access="rw">
+                <cocoa key="endDateString"/>
+            </property>
+            <property name="sort order" code="esrd" description="The display sort order (lower numbers appear first)." type="integer" access="rw">
+                <cocoa key="sortOrder"/>
             </property>
         </class>
 

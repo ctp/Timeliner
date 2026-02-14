@@ -10,6 +10,7 @@ struct TimelineCanvasView: View {
     @Query(sort: \Lane.sortOrder) private var lanes: [Lane]
     @Query private var unassignedEvents: [TimelineEvent]
     @Query private var allEvents: [TimelineEvent]
+    @Query(sort: \Era.sortOrder) private var eras: [Era]
 
     @Environment(\.modelContext) private var modelContext
 
@@ -51,28 +52,41 @@ struct TimelineCanvasView: View {
 
                 // Lanes
                 ScrollView(.vertical, showsIndicators: true) {
-                    VStack(spacing: 1) {
-                        ForEach(lanes, id: \.id) { lane in
-                            LaneRowView(
-                                lane: lane,
-                                viewport: viewportWithWidth(geometry.size.width),
-                                showPointLabels: showPointLabels,
-                                selectedEventID: selectedEventID,
-                                onSelectEvent: { event in
-                                    selectedEventID = event.id
-                                },
-                                onCreateEvent: { xPosition in
-                                    createPointEvent(at: xPosition, in: lane, viewportWidth: geometry.size.width)
-                                },
-                                onDragEnd: { event, newStart, newEnd in
-                                    applyDrag(event: event, newStart: newStart, newEnd: newEnd)
-                                }
-                            )
+                    ZStack(alignment: .topLeading) {
+                        // Era background bands
+                        GeometryReader { scrollGeo in
+                            ForEach(eras, id: \.id) { era in
+                                EraBandView(
+                                    era: era,
+                                    viewport: viewportWithWidth(geometry.size.width),
+                                    totalHeight: scrollGeo.size.height
+                                )
+                            }
                         }
 
-                        // Unassigned events lane
-                        if !eventsWithoutLane.isEmpty {
-                            unassignedLaneView(width: geometry.size.width)
+                        VStack(spacing: 1) {
+                            ForEach(lanes, id: \.id) { lane in
+                                LaneRowView(
+                                    lane: lane,
+                                    viewport: viewportWithWidth(geometry.size.width),
+                                    showPointLabels: showPointLabels,
+                                    selectedEventID: selectedEventID,
+                                    onSelectEvent: { event in
+                                        selectedEventID = event.id
+                                    },
+                                    onCreateEvent: { xPosition in
+                                        createPointEvent(at: xPosition, in: lane, viewportWidth: geometry.size.width)
+                                    },
+                                    onDragEnd: { event, newStart, newEnd in
+                                        applyDrag(event: event, newStart: newStart, newEnd: newEnd)
+                                    }
+                                )
+                            }
+
+                            // Unassigned events lane
+                            if !eventsWithoutLane.isEmpty {
+                                unassignedLaneView(width: geometry.size.width)
+                            }
                         }
                     }
                 }
@@ -358,6 +372,6 @@ struct TimelineCanvasView: View {
 
 #Preview {
     TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), createPointEvent: .constant(false), createSpanEvent: .constant(false))
-        .modelContainer(for: [TimelineEvent.self, Lane.self], inMemory: true)
+        .modelContainer(for: [TimelineEvent.self, Lane.self, Era.self], inMemory: true)
         .frame(width: 800, height: 400)
 }

@@ -20,12 +20,14 @@ Timeliner is a macOS Catalyst timeline visualization app built with SwiftUI and 
 | `FlexibleDate` | Variable-precision date (year-only through minute-level) with timezone-aware storage |
 | `TimelineEvent` | Main entity with title, description, start/end dates, and lane |
 | `Lane` | Visual grouping track (horizontal row) with name, color, sortOrder |
+| `Era` | Cross-lane date range (background band) with name, start/end dates, sortOrder |
 
 **Key design decisions:**
-- `FlexibleDate` is stored as JSON-encoded `Data` in `TimelineEvent` (SwiftData doesn't directly support custom structs)
+- `FlexibleDate` is stored as JSON-encoded `Data` in `TimelineEvent` and `Era` (SwiftData doesn't directly support custom structs)
 - `FlexibleDate` timezone convention: day-precision and coarser store raw calendar values (no timezone); time-precision (hour/minute) stores UTC internally. Use `fromLocalTime(...)` to create time-precision dates and `localDisplayComponents` to read them back in local time.
 - Relationships: Lane → Events (one-to-many)
 - Events without a lane appear in an "Unassigned" section
+- Eras are independent overlays — no relationship to lanes or events; rendered as subtle background bands spanning all lanes
 
 ### Document Structure
 
@@ -44,10 +46,12 @@ UTType: `com.timeliner.document`
 ContentView
 ├── NavigationSplitView
 │   ├── Sidebar (List)
-│   │   └── LaneListView    # CRUD for lanes
+│   │   ├── LaneListView    # CRUD for lanes
+│   │   └── EraListView     # CRUD for eras (cross-lane date ranges)
 │   └── Detail
 │       └── TimelineCanvasView
 │           ├── TimeAxisView      # Time ruler with adaptive ticks
+│           ├── EraBandView[]     # Background bands behind lanes (ZStack)
 │           ├── LaneRowView[]     # One per lane, dynamic height via overlap layout
 │           │   └── EventView[]   # Point (dot) or span (bar), with system tooltips
 │           ├── .inspector()       # EventInspectorView (trailing panel, ⌘I)
@@ -68,7 +72,8 @@ Timeliner/
 ├── Models/
 │   ├── FlexibleDate.swift
 │   ├── TimelineEvent.swift
-│   └── Lane.swift
+│   ├── Lane.swift
+│   └── Era.swift
 ├── Views/
 │   ├── TimelineLayoutEngine.swift  # Shared layout types and functions
 │   ├── TimelineViewport.swift
@@ -76,16 +81,19 @@ Timeliner/
 │   ├── TimeAxisView.swift
 │   ├── EventView.swift
 │   ├── LaneRowView.swift
+│   ├── EraBandView.swift          # Background band for era/period date ranges
 │   ├── EventInspectorView.swift  # Trailing inspector for editing events
 │   ├── FlexibleDateEditor.swift  # Reusable progressive date fields
 │   └── Sidebar/
-│       └── LaneListView.swift
+│       ├── LaneListView.swift
+│       └── EraListView.swift
 ├── Scripting/
 │   ├── Timeliner.sdef              # AppleScript dictionary definition
 │   ├── DocumentRegistry.swift      # Singleton mapping documents to ModelContexts
 │   ├── ScriptableDocument.swift    # NSObject wrapper for document scripting
 │   ├── ScriptableLane.swift        # NSObject wrapper for Lane scripting
 │   ├── ScriptableEvent.swift       # NSObject wrapper for TimelineEvent scripting
+│   ├── ScriptableEra.swift         # NSObject wrapper for Era scripting
 │   ├── CreateDocumentCommand.swift # Custom NSCreateCommand for make/lane/event creation
 │   ├── TimelinerDeleteCommand.swift # Custom delete handler
 │   └── NSApplication+Scripting.swift  # KVC entry point for scriptableDocuments
@@ -141,6 +149,7 @@ Implemented:
 - ✅ Event dragging: drag point or span events to move them in time; drag left/right edges of spans to resize (change start/end date); 6pt edge hit zones for resize detection; dates snap to event's own precision on commit; minimum duration of one precision unit enforced; global coordinate space for jitter-free dragging; GeometryReader-based edge detection for spans
 - ✅ AppleScript support: full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). **Known limitation:** `save`, `close`, and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
 - ✅ Lane color picker: click a lane in the sidebar to open an editor sheet with name and ColorPicker; new-lane flow also includes a ColorPicker instead of hardcoded blue; `Color.toHex()` extension for Color↔hex conversion; sheet presented on List (not inside List cells) to avoid SwiftUI re-presentation bugs
+- ✅ Eras / Periods: cross-lane date ranges rendered as subtle background bands spanning all lanes; managed via sidebar "Eras" section with CRUD (add, edit name + start/end dates, delete, reorder); `EraBandView` renders with horizontal fade-in/fade-out at edges and centered name label with background pill; fixed `Color.primary.opacity(0.06)` color (works in light/dark mode); sample data includes "Sprint Phase" and "Vacation Season" eras; full AppleScript support (`make new era`, `delete era`, property get/set); schema migration v1.0.0 → v1.1.0
 
 ## Future Work (Out of Scope for v1)
 
@@ -152,7 +161,7 @@ These were explicitly deferred but the model accommodates them:
 4. **Collapsible Lanes** - Expand/collapse for focus
 5. **Minimap** - Overview navigation for large timelines
 6. **Search** - Find events by title/description
-7. **Eras / Periods** - Cross-lane date ranges that span all lanes (e.g. "Renaissance", "Q3 2025"); rendered as a background band or overlay across the full timeline height, distinct from per-lane events
+7. ~~**Eras / Periods**~~ - Implemented in v1.1
 
 ## Design Documents
 

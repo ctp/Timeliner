@@ -102,6 +102,33 @@ class ScriptableDocument: NSObject {
         modelContext.delete(wrapper.event)
     }
 
+    // MARK: - Era Elements
+
+    @objc var eras: [ScriptableEra] {
+        let descriptor = FetchDescriptor<Era>(sortBy: [SortDescriptor(\.sortOrder)])
+        let models = (try? modelContext.fetch(descriptor)) ?? []
+        return models.map { ScriptableEra(era: $0, context: modelContext, document: self) }
+    }
+
+    @objc func insertInEras(_ wrapper: ScriptableEra) {
+        modelContext.insert(wrapper.era)
+    }
+
+    @objc func insertObject(_ wrapper: ScriptableEra, inErasAt index: Int) {
+        modelContext.insert(wrapper.era)
+    }
+
+    @objc func removeObjectFromErasAt(_ index: Int) {
+        let descriptor = FetchDescriptor<Era>(sortBy: [SortDescriptor(\.sortOrder)])
+        guard let models = try? modelContext.fetch(descriptor),
+              index >= 0, index < models.count else { return }
+        modelContext.delete(models[index])
+    }
+
+    @objc func removeFromEras(_ wrapper: ScriptableEra) {
+        modelContext.delete(wrapper.era)
+    }
+
     // MARK: - Object Specifier
 
     override var objectSpecifier: NSScriptObjectSpecifier? {

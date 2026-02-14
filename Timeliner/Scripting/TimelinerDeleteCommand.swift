@@ -38,6 +38,8 @@ class TimelinerDeleteCommand: NSScriptCommand {
             event.modelContext.delete(event.event)
         } else if let lane = obj as? ScriptableLane {
             lane.modelContext.delete(lane.lane)
+        } else if let era = obj as? ScriptableEra {
+            era.modelContext.delete(era.era)
         }
     }
 }

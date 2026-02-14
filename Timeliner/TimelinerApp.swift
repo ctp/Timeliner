@@ -74,17 +74,31 @@ extension UTType {
 
 struct TimelinerMigrationPlan: SchemaMigrationPlan {
     static var schemas: [VersionedSchema.Type] = [
+        TimelinerVersionedSchemaV1.self,
         TimelinerVersionedSchema.self,
     ]
 
-    static var stages: [MigrationStage] = []
+    static var stages: [MigrationStage] = [
+        .lightweight(fromVersion: TimelinerVersionedSchemaV1.self,
+                     toVersion: TimelinerVersionedSchema.self),
+    ]
 }
 
-struct TimelinerVersionedSchema: VersionedSchema {
+struct TimelinerVersionedSchemaV1: VersionedSchema {
     static var versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] = [
         TimelineEvent.self,
         Lane.self,
+    ]
+}
+
+struct TimelinerVersionedSchema: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 1, 0)
+
+    static var models: [any PersistentModel.Type] = [
+        TimelineEvent.self,
+        Lane.self,
+        Era.self,
     ]
 }
