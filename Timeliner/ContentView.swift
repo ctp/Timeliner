@@ -62,11 +62,18 @@ struct ContentView: View {
     @State private var createPointEvent = false
     @State private var createSpanEvent = false
     @State private var registryID: UUID?
+    @State private var editingLane: Lane?
 
     var body: some View {
         NavigationSplitView {
             List {
-                LaneListView()
+                LaneListView(editingLane: $editingLane)
+            }
+            .sheet(item: $editingLane) { lane in
+                LaneEditorSheet(lane: lane, onDone: { name, color in
+                    lane.name = name
+                    lane.color = color
+                })
             }
             #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)

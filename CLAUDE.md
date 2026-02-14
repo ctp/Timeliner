@@ -140,6 +140,7 @@ Implemented:
 - ✅ Menu event creation: File > New Point Event (⌘E) and New Span Event (⇧⌘E); places at viewport center, uses selected event's lane (fallback to first lane); span default durations vary by precision (time: +4h, day: +7d, month: +3mo, year: +5yr); auto-selects and opens inspector
 - ✅ Event dragging: drag point or span events to move them in time; drag left/right edges of spans to resize (change start/end date); 6pt edge hit zones for resize detection; dates snap to event's own precision on commit; minimum duration of one precision unit enforced; global coordinate space for jitter-free dragging; GeometryReader-based edge detection for spans
 - ✅ AppleScript support: full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). **Known limitation:** `save`, `close`, and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
+- ✅ Lane color picker: click a lane in the sidebar to open an editor sheet with name and ColorPicker; new-lane flow also includes a ColorPicker instead of hardcoded blue; `Color.toHex()` extension for Color↔hex conversion; sheet presented on List (not inside List cells) to avoid SwiftUI re-presentation bugs
 
 ## Future Work (Out of Scope for v1)
 
@@ -150,8 +151,7 @@ These were explicitly deferred but the model accommodates them:
 3. **Vertical Orientation** - Alternative timeline layout
 4. **Collapsible Lanes** - Expand/collapse for focus
 5. **Minimap** - Overview navigation for large timelines
-6. **Lane Color Picker** - Currently hardcoded; needs UI for user selection
-7. **Search** - Find events by title/description
+6. **Search** - Find events by title/description
 
 ## Design Documents
 
