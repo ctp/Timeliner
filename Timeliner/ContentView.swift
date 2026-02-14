@@ -55,11 +55,13 @@ extension FocusedValues {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.undoManager) private var undoManager
     @State private var fitToContent = false
     @State private var showPointLabels = false
     @State private var showInspector = false
     @State private var createPointEvent = false
     @State private var createSpanEvent = false
+    @State private var registryID: UUID?
 
     var body: some View {
         NavigationSplitView {
@@ -101,6 +103,30 @@ struct ContentView: View {
         .focusedSceneValue(\.showInspector, $showInspector)
         .focusedSceneValue(\.createPointEvent, $createPointEvent)
         .focusedSceneValue(\.createSpanEvent, $createSpanEvent)
+        .onAppear {
+            registerWithScriptingBridge()
+        }
+        .onDisappear {
+            if let id = registryID {
+                DocumentRegistry.shared.unregister(id: id)
+                registryID = nil
+            }
+        }
+    }
+
+    /// Register this document's ModelContext with the scripting DocumentRegistry
+    /// so AppleScript can discover and operate on it.
+    private func registerWithScriptingBridge() {
+        // Determine the document's file URL by finding the NSDocument whose
+        // undoManager matches ours (SwiftUI DocumentGroup shares the undoManager).
+        let fileURL: URL? = NSDocumentController.shared.documents.first { doc in
+            doc.undoManager === undoManager
+        }?.fileURL
+
+        registryID = DocumentRegistry.shared.register(
+            context: modelContext,
+            fileURL: fileURL
+        )
     }
 
     private func addSampleData() {

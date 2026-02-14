@@ -155,3 +155,76 @@ extension FlexibleDate: Comparable {
         lhs.asDate < rhs.asDate
     }
 }
+
+// MARK: - ISO String Conversion
+
+extension FlexibleDate {
+    /// Create a FlexibleDate from an ISO-ish string with precision inferred from the format.
+    ///
+    /// Supported formats:
+    /// - `"2026"` → year precision
+    /// - `"2026-02"` → month precision
+    /// - `"2026-02-13"` → day precision
+    /// - `"2026-02-13T14:30"` → time precision (interpreted as local time)
+    init?(isoString: String) {
+        let s = isoString.trimmingCharacters(in: .whitespaces)
+
+        // Time precision: YYYY-MM-DDThh:mm
+        if let tIndex = s.firstIndex(of: "T") {
+            let datePart = s[s.startIndex..<tIndex]
+            let timePart = s[s.index(after: tIndex)...]
+            let dateComponents = datePart.split(separator: "-")
+            let timeComponents = timePart.split(separator: ":")
+            guard dateComponents.count == 3, timeComponents.count == 2,
+                  let y = Int(dateComponents[0]),
+                  let mo = Int(dateComponents[1]), (1...12).contains(mo),
+                  let d = Int(dateComponents[2]), (1...31).contains(d),
+                  let h = Int(timeComponents[0]), (0...23).contains(h),
+                  let mi = Int(timeComponents[1]), (0...59).contains(mi) else {
+                return nil
+            }
+            // Time strings are local time — use fromLocalTime to convert to UTC storage
+            self = FlexibleDate.fromLocalTime(year: y, month: mo, day: d, hour: h, minute: mi)
+            return
+        }
+
+        let parts = s.split(separator: "-")
+        switch parts.count {
+        case 1:
+            guard let y = Int(parts[0]) else { return nil }
+            self.init(year: y)
+        case 2:
+            guard let y = Int(parts[0]),
+                  let mo = Int(parts[1]), (1...12).contains(mo) else { return nil }
+            self.init(year: y, month: mo)
+        case 3:
+            guard let y = Int(parts[0]),
+                  let mo = Int(parts[1]), (1...12).contains(mo),
+                  let d = Int(parts[2]), (1...31).contains(d) else { return nil }
+            self.init(year: y, month: mo, day: d)
+        default:
+            return nil
+        }
+    }
+
+    /// Format as an ISO-ish string matching this date's precision.
+    ///
+    /// - Year: `"2026"`
+    /// - Month: `"2026-02"`
+    /// - Day: `"2026-02-13"`
+    /// - Time: `"2026-02-13T14:30"` (local time)
+    var isoString: String {
+        switch precision {
+        case .year:
+            return String(format: "%04d", year)
+        case .month:
+            return String(format: "%04d-%02d", year, month ?? 1)
+        case .day:
+            return String(format: "%04d-%02d-%02d", year, month ?? 1, day ?? 1)
+        case .time:
+            let local = localDisplayComponents
+            return String(format: "%04d-%02d-%02dT%02d:%02d",
+                          local.year, local.month, local.day, local.hour, local.minute)
+        }
+    }
+}

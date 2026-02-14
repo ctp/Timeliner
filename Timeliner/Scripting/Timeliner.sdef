@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
+<dictionary title="Timeliner Terminology">
+
+    <!--
+        Standard Suite
+        Common commands and classes for all applications.
+    -->
+    <suite name="Standard Suite" code="????" description="Common classes and commands for all applications.">
+
+        <command name="open" code="aevtodoc" description="Open a document.">
+            <direct-parameter description="The file(s) to be opened.">
+                <type type="file" list="yes"/>
+            </direct-parameter>
+            <result description="The opened document(s).">
+                <type type="document" list="yes"/>
+            </result>
+        </command>
+
+        <command name="close" code="coreclos" description="Close a document.">
+            <cocoa class="NSCloseCommand"/>
+            <direct-parameter description="The document to close." type="specifier"/>
+            <parameter name="saving" code="savo" description="Should changes be saved before closing?" type="save options" optional="yes">
+                <cocoa key="SaveOptions"/>
+            </parameter>
+            <parameter name="saving in" code="kfil" description="The file in which to save the document, if so." type="file" optional="yes">
+                <cocoa key="File"/>
+            </parameter>
+        </command>
+
+        <command name="save" code="coresave" description="Save a document.">
+            <direct-parameter description="The document(s) or window(s) to save." type="specifier"/>
+            <parameter name="in" code="kfil" description="The file in which to save the document." type="file" optional="yes">
+                <cocoa key="File"/>
+            </parameter>
+            <parameter name="as" code="fltp" description="The file format to use." type="saveable file format" optional="yes">
+                <cocoa key="FileType"/>
+            </parameter>
+        </command>
+
+        <command name="quit" code="aevtquit" description="Quit the application.">
+            <cocoa class="NSQuitCommand"/>
+            <parameter name="saving" code="savo" description="Should changes be saved before quitting?" type="save options" optional="yes">
+                <cocoa key="SaveOptions"/>
+            </parameter>
+        </command>
+
+        <command name="count" code="corecnte" description="Return the number of elements of a particular class within an object.">
+            <cocoa class="NSCountCommand"/>
+            <direct-parameter description="The objects to be counted." type="specifier"/>
+            <parameter name="each" code="kocl" description="The class of objects to be counted." type="type" optional="yes">
+                <cocoa key="ObjectClass"/>
+            </parameter>
+            <result description="The count." type="integer"/>
+        </command>
+
+        <command name="delete" code="coredelo" description="Delete an object.">
+            <cocoa class="TimelinerDeleteCommand"/>
+            <direct-parameter description="The object(s) to delete." type="specifier"/>
+        </command>
+
+        <command name="exists" code="coredoex" description="Verify that an object exists.">
+            <cocoa class="NSExistsCommand"/>
+            <direct-parameter description="The object(s) to check." type="any"/>
+            <result description="Did the object(s) exist?" type="boolean"/>
+        </command>
+
+        <command name="make" code="corecrel" description="Create a new object.">
+            <cocoa class="TimelinerCreateCommand"/>
+            <parameter name="new" code="kocl" description="The class of the new object." type="type">
+                <cocoa key="ObjectClass"/>
+            </parameter>
+            <parameter name="at" code="insh" description="The location at which to insert the object." type="location specifier" optional="yes">
+                <cocoa key="Location"/>
+            </parameter>
+            <parameter name="with data" code="data" description="The initial contents of the object." type="any" optional="yes">
+                <cocoa key="ObjectData"/>
+            </parameter>
+            <parameter name="with properties" code="prdt" description="The initial values for properties of the object." type="record" optional="yes">
+                <cocoa key="KeyDictionary"/>
+            </parameter>
+            <result description="The new object." type="specifier"/>
+        </command>
+
+        <enumeration name="save options" code="savo">
+            <enumerator name="yes" code="yes " description="Save the file."/>
+            <enumerator name="no" code="no  " description="Do not save the file."/>
+            <enumerator name="ask" code="ask " description="Ask the user whether or not to save the file."/>
+        </enumeration>
+
+        <enumeration name="saveable file format" code="savf">
+            <enumerator name="Timeliner document" code="Tmlr" description="A Timeliner document."/>
+        </enumeration>
+
+        <class name="application" code="capp" description="The Timeliner application.">
+            <cocoa class="NSApplication"/>
+            <property name="name" code="pnam" description="The name of the application." type="text" access="r">
+                <cocoa key="name"/>
+            </property>
+            <property name="frontmost" code="pisf" description="Is this the active application?" type="boolean" access="r">
+                <cocoa key="isActive"/>
+            </property>
+            <property name="version" code="vers" description="The version number of the application." type="text" access="r">
+                <cocoa key="version"/>
+            </property>
+            <element type="document" access="rw">
+                <cocoa key="scriptableDocuments"/>
+            </element>
+            <element type="window" access="r">
+                <cocoa key="orderedWindows"/>
+            </element>
+        </class>
+
+        <class name="document" code="docu" description="A Timeliner timeline document.">
+            <cocoa class="ScriptableDocument"/>
+            <property name="name" code="pnam" description="The document's name." type="text" access="r">
+                <cocoa key="name"/>
+            </property>
+            <property name="modified" code="imod" description="Has the document been modified since last save?" type="boolean" access="r">
+                <cocoa key="isModified"/>
+            </property>
+            <property name="file" code="file" description="The document's location on disk, if saved." type="file" access="r">
+                <cocoa key="fileURL"/>
+            </property>
+        </class>
+
+        <class name="window" code="cwin" description="A window.">
+            <cocoa class="NSWindow"/>
+            <property name="name" code="pnam" description="The title of the window." type="text" access="rw">
+                <cocoa key="title"/>
+            </property>
+            <property name="id" code="ID  " description="The unique identifier of the window." type="integer" access="r">
+                <cocoa key="uniqueID"/>
+            </property>
+            <property name="index" code="pidx" description="The index of the window, ordered front to back." type="integer" access="rw">
+                <cocoa key="orderedIndex"/>
+            </property>
+            <property name="closeable" code="hclb" description="Does the window have a close button?" type="boolean" access="r">
+                <cocoa key="hasCloseBox"/>
+            </property>
+            <property name="miniaturizable" code="ismn" description="Does the window have a minimize button?" type="boolean" access="r">
+                <cocoa key="isMiniaturizable"/>
+            </property>
+            <property name="miniaturized" code="pmnd" description="Is the window minimized right now?" type="boolean" access="rw">
+                <cocoa key="isMiniaturized"/>
+            </property>
+            <property name="resizable" code="prsz" description="Can the window be resized?" type="boolean" access="r">
+                <cocoa key="isResizable"/>
+            </property>
+            <property name="visible" code="pvis" description="Is the window currently visible?" type="boolean" access="rw">
+                <cocoa key="isVisible"/>
+            </property>
+            <property name="zoomable" code="iszm" description="Does the window have a zoom button?" type="boolean" access="r">
+                <cocoa key="isZoomable"/>
+            </property>
+            <property name="zoomed" code="pzum" description="Is the window zoomed right now?" type="boolean" access="rw">
+                <cocoa key="isZoomed"/>
+            </property>
+            <property name="document" code="docu" description="The document whose contents are displayed in the window." type="document" access="r"/>
+        </class>
+
+    </suite>
+
+    <!--
+        Timeliner Suite
+        Classes and commands specific to Timeliner.
+    -->
+    <suite name="Timeliner Suite" code="Tmlr" description="Timeliner-specific classes and commands.">
+
+        <class-extension extends="document" description="Timeliner document properties.">
+            <element type="lane" access="rw">
+                <cocoa key="lanes"/>
+            </element>
+            <element type="timeline event" access="rw">
+                <cocoa key="events"/>
+            </element>
+        </class-extension>
+
+        <class name="lane" code="Lane" plural="lanes" description="A horizontal track that groups events visually.">
+            <cocoa class="ScriptableLane"/>
+            <property name="id" code="ID  " description="The unique identifier." type="text" access="r">
+                <cocoa key="uniqueID"/>
+            </property>
+            <property name="name" code="pnam" description="The lane's display name." type="text" access="rw">
+                <cocoa key="name"/>
+            </property>
+            <property name="color" code="colr" description="The lane's hex color code (e.g. #3498DB)." type="text" access="rw">
+                <cocoa key="color"/>
+            </property>
+            <property name="sort order" code="sord" description="The display sort order (lower numbers appear first)." type="integer" access="rw">
+                <cocoa key="sortOrder"/>
+            </property>
+            <element type="timeline event" access="rw">
+                <cocoa key="events"/>
+            </element>
+        </class>
+
+        <class name="timeline event" code="TEvt" plural="timeline events" description="A point or span event on the timeline.">
+            <cocoa class="ScriptableEvent"/>
+            <property name="id" code="ID  " description="The unique identifier." type="text" access="r">
+                <cocoa key="uniqueID"/>
+            </property>
+            <property name="title" code="pnam" description="The event's title." type="text" access="rw">
+                <cocoa key="title"/>
+            </property>
+            <property name="event description" code="edsc" description="A longer description of the event." type="text" access="rw">
+                <cocoa key="eventDescription"/>
+            </property>
+            <property name="start date" code="stdt" description="The start date as a precision-inferred string (e.g. 2026, 2026-02, 2026-02-13, 2026-02-13T14:30)." type="text" access="rw">
+                <cocoa key="startDateString"/>
+            </property>
+            <property name="end date" code="endt" description="The end date string, or missing value for point events." type="text" access="rw">
+                <cocoa key="endDateString"/>
+            </property>
+            <property name="is point event" code="isPt" description="True if the event has no end date (is a point in time)." type="boolean" access="r">
+                <cocoa key="isPointEvent"/>
+            </property>
+            <property name="lane" code="evln" description="The lane this event belongs to." type="lane" access="rw">
+                <cocoa key="scriptableLane"/>
+            </property>
+        </class>
+
+    </suite>
+
+</dictionary>
