@@ -121,7 +121,7 @@ struct TimelineCanvasView: View {
         }
         .background(Color(nsColor: .textBackgroundColor))
         .inspector(isPresented: $showInspector) {
-            EventInspectorView(event: selectedEvent)
+            EventInspectorView(event: selectedEvent, onDelete: { selectedEventID = nil })
                 .inspectorColumnWidth(min: 250, ideal: 300, max: 400)
         }
     }
