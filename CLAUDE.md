@@ -86,7 +86,8 @@ Timeliner/
 │   ├── ScriptableDocument.swift    # NSObject wrapper for document scripting
 │   ├── ScriptableLane.swift        # NSObject wrapper for Lane scripting
 │   ├── ScriptableEvent.swift       # NSObject wrapper for TimelineEvent scripting
-│   ├── CreateDocumentCommand.swift # Custom NSCreateCommand for `make new document`
+│   ├── CreateDocumentCommand.swift # Custom NSCreateCommand for make/lane/event creation
+│   ├── TimelinerDeleteCommand.swift # Custom delete handler
 │   └── NSApplication+Scripting.swift  # KVC entry point for scriptableDocuments
 ├── ContentView.swift
 ├── TimelinerApp.swift
@@ -138,7 +139,7 @@ Implemented:
 - ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with segmented precision picker (Year|Month|Day|Time) for FlexibleDate fields; auto-opens on event creation; changing start date shifts end date to preserve duration; end date clamped to at least one day after start; FlexibleDateEditor syncs from external binding changes
 - ✅ Menu event creation: File > New Point Event (⌘E) and New Span Event (⇧⌘E); places at viewport center, uses selected event's lane (fallback to first lane); span default durations vary by precision (time: +4h, day: +7d, month: +3mo, year: +5yr); auto-selects and opens inspector
 - ✅ Event dragging: drag point or span events to move them in time; drag left/right edges of spans to resize (change start/end date); 6pt edge hit zones for resize detection; dates snap to event's own precision on commit; minimum duration of one precision unit enforced; global coordinate space for jitter-free dragging; GeometryReader-based edge detection for spans
-- ✅ AppleScript support (initial): SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event) with KVC-compliant properties, custom TimelinerCreateCommand for `make new document`, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). Needs runtime testing with `osascript`.
+- ✅ AppleScript support: full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). **Known limitation:** `save`, `close`, and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
 
 ## Future Work (Out of Scope for v1)
 

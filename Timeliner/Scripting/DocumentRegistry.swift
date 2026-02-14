@@ -110,4 +110,23 @@ final class DocumentRegistry {
 
     /// Number of registered documents.
     var count: Int { orderedEntries.count }
+
+    /// Find the NSDocument for a given registry entry ID.
+    func nsDocument(for registryID: UUID) -> NSDocument? {
+        guard let entry = orderedEntries.first(where: { $0.id == registryID }) else { return nil }
+
+        for doc in NSDocumentController.shared.documents {
+            if let docURL = doc.fileURL, let entryURL = entry.fileURL {
+                if docURL.standardizedFileURL == entryURL.standardizedFileURL {
+                    return doc
+                }
+            } else if doc.fileURL == nil && entry.fileURL == nil {
+                // Match untitled: check if this doc's entry matches
+                if let matchedEntry = self.entry(for: doc), matchedEntry.id == registryID {
+                    return doc
+                }
+            }
+        }
+        return nil
+    }
 }
