@@ -37,6 +37,8 @@ struct TimeAxisView: View {
         }
         .id(viewport)
         .frame(height: 30)
+        .accessibilityLabel("Timeline ruler")
+        .accessibilityHint("Drag to pan the timeline. Pinch to zoom.")
     }
 
     private func calculateTicks(for viewport: TimelineViewport, width: CGFloat) -> [Tick] {

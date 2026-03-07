@@ -27,6 +27,11 @@ struct EraListView: View {
                 .onTapGesture {
                     editingEra = era
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(era.name)
+                .accessibilityValue(dateRangeSummary(era))
+                .accessibilityHint("Double-tap to edit era")
+                .accessibilityAddTraits(.isButton)
             }
             .onDelete(perform: deleteEras)
             .onMove(perform: moveEras)

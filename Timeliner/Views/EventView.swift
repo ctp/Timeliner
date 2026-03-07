@@ -167,6 +167,23 @@ struct EventView: View {
                 onSelect()
             }
             .help(event.title)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityValue(accessibilityValue)
+            .accessibilityHint(event.isPointEvent ? "Double-tap to select. Drag to move." : "Double-tap to select. Drag edges to resize, drag center to move.")
+            .accessibilityAddTraits(.isButton)
+    }
+
+    private var accessibilityLabel: String {
+        let typeName = event.isPointEvent ? "Point event" : "Span event"
+        return "\(typeName): \(event.title)"
+    }
+
+    private var accessibilityValue: String {
+        if let end = event.endDate {
+            return "\(event.startDate.isoString) to \(end.isoString)"
+        }
+        return event.startDate.isoString
     }
 
     private var pointEventView: some View {

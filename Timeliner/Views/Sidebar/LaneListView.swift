@@ -22,12 +22,17 @@ struct LaneListView: View {
                     Circle()
                         .fill(Color(hex: lane.color) ?? .gray)
                         .frame(width: TimelineConstants.laneColorCircleSize, height: TimelineConstants.laneColorCircleSize)
+                        .accessibilityHidden(true)
                     Text(lane.name)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
                     editingLane = lane
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(lane.name)
+                .accessibilityHint("Double-tap to edit lane")
+                .accessibilityAddTraits(.isButton)
             }
             .onDelete(perform: deleteLanes)
             .onMove(perform: moveLanes)
@@ -37,6 +42,7 @@ struct LaneListView: View {
                     ColorPicker("", selection: $newLanePickerColor, supportsOpacity: false)
                         .labelsHidden()
                         .frame(width: 24)
+                        .accessibilityLabel("Lane color")
 
                     TextField("Lane name", text: $newLaneName)
                         .textFieldStyle(.roundedBorder)

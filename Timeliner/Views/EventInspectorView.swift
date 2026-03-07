@@ -54,6 +54,7 @@ private struct EventDetailForm: View {
                     set: { event.eventDescription = $0.isEmpty ? nil : $0 }
                 ))
                 .frame(minHeight: 60)
+                .accessibilityLabel("Event description")
             }
 
             Section("Lane") {

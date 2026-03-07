@@ -52,8 +52,9 @@ struct TimelineCanvasView: View {
 
                 // Lanes
                 ScrollView(.vertical, showsIndicators: true) {
+
                     ZStack(alignment: .topLeading) {
-                        // Era background bands
+                        // Era background bands (decorative background; accessible via sidebar)
                         GeometryReader { scrollGeo in
                             ForEach(eras, id: \.id) { era in
                                 EraBandView(
@@ -61,6 +62,7 @@ struct TimelineCanvasView: View {
                                     viewport: viewportWithWidth(geometry.size.width),
                                     totalHeight: scrollGeo.size.height
                                 )
+                                .accessibilityHidden(true)
                             }
                         }
 
@@ -200,6 +202,7 @@ struct TimelineCanvasView: View {
                 .padding(.leading, 8)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(.top, 4)
+                .accessibilityHidden(true)
 
             ForEach(layout.layout, id: \.event.id) { item in
                 EventView(
@@ -219,6 +222,8 @@ struct TimelineCanvasView: View {
             }
         }
         .frame(height: totalHeight)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Lane: Unassigned")
     }
 
     /// Returns the earliest start and latest end across all events, or nil if empty.

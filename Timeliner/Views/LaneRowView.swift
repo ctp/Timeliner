@@ -42,8 +42,9 @@ struct LaneRowView: View {
             // Background
             Rectangle()
                 .fill(laneBackgroundColor)
+                .accessibilityHidden(true)
 
-            // Connection lines (behind events)
+            // Connection lines (behind events) — decorative
             ConnectionLinesShape(lines: lines)
                 .stroke(laneStrokeColor, lineWidth: TimelineConstants.connectionLineWidth)
                 .mask(
@@ -58,14 +59,16 @@ struct LaneRowView: View {
                         endPoint: .trailing
                     )
                 )
+                .accessibilityHidden(true)
 
-            // Lane label
+            // Lane label — decorative; lane identity is conveyed by the container label
             Text(lane.name)
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.leading, 8)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(.top, 4)
+                .accessibilityHidden(true)
 
             // Events
             ForEach(layout.layout, id: \.event.id) { item in
@@ -86,12 +89,18 @@ struct LaneRowView: View {
         .frame(height: totalHeight)
         .clipped()
         .contentShape(Rectangle())
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Lane: \(lane.name)")
         .gesture(
             SpatialTapGesture(count: 2)
                 .onEnded { value in
                     onCreateEvent(value.location.x)
                 }
         )
+        .accessibilityAction(named: "Create Event") {
+            // Trigger creation at the horizontal centre of the lane
+            onCreateEvent(0)
+        }
     }
 
     private var laneStrokeColor: Color {
