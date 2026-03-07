@@ -53,7 +53,7 @@ struct ConnectionLines {
 
 // MARK: - Constants
 
-let defaultBaseRowHeight: CGFloat = 40
+let defaultBaseRowHeight: CGFloat = TimelineConstants.baseRowHeight
 
 // MARK: - Layout Functions
 
@@ -63,9 +63,9 @@ func eventXRange(for event: TimelineEvent, viewport: TimelineViewport) -> (start
     if let end = event.endDate {
         endX = viewport.xPosition(for: end.asDate)
     } else {
-        endX = startX + 16
+        endX = startX + TimelineConstants.pointEventCollisionWidth
     }
-    endX = max(endX, startX + 20)
+    endX = max(endX, startX + TimelineConstants.minEventWidth)
     return (startX, endX)
 }
 
@@ -82,9 +82,9 @@ func layoutEvents(_ events: [TimelineEvent], viewport: TimelineViewport) -> (lay
         if let end = event.endDate {
             endX = viewport.xPosition(for: end.asDate)
         } else {
-            endX = startX + 16
+            endX = startX + TimelineConstants.pointEventCollisionWidth
         }
-        endX = max(endX, startX + 20)
+        endX = max(endX, startX + TimelineConstants.minEventWidth)
         return (startX, endX)
     }
 

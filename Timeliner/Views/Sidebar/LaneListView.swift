@@ -21,7 +21,7 @@ struct LaneListView: View {
                 HStack {
                     Circle()
                         .fill(Color(hex: lane.color) ?? .gray)
-                        .frame(width: 12, height: 12)
+                        .frame(width: TimelineConstants.laneColorCircleSize, height: TimelineConstants.laneColorCircleSize)
                     Text(lane.name)
                 }
                 .contentShape(Rectangle())

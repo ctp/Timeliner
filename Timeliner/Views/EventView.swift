@@ -31,9 +31,9 @@ struct EventView: View {
     var yOffset: CGFloat = 0
     var onDragEnd: ((TimelineEvent, FlexibleDate, FlexibleDate?) -> Void)?
 
-    private let eventHeight: CGFloat = 24
-    private let baseRowHeight: CGFloat = 40
-    private static let edgeHitZone: CGFloat = 6
+    private let eventHeight: CGFloat = TimelineConstants.eventHeight
+    private let baseRowHeight: CGFloat = TimelineConstants.baseRowHeight
+    private static let edgeHitZone: CGFloat = TimelineConstants.edgeHitZone
 
     @State private var dragMode: EventDragMode = .none
     @State private var dragOffset: CGFloat = 0
@@ -85,8 +85,7 @@ struct EventView: View {
             // Clamp so start doesn't pass end minus minimum width
             if let endDate = event.endDate {
                 let endX = viewport.xPosition(for: endDate.asDate)
-                let minWidth: CGFloat = 20
-                return min(candidate, endX - minWidth)
+                return min(candidate, endX - TimelineConstants.minEventWidth)
             }
             return candidate
         default:
@@ -101,8 +100,7 @@ struct EventView: View {
             return originalEndX + dragOffset
         case .resizeEnd:
             let candidate = originalEndX + dragEndOffset
-            let minWidth: CGFloat = 20
-            return max(candidate, startX + minWidth)
+            return max(candidate, startX + TimelineConstants.minEventWidth)
         default:
             return originalEndX
         }
@@ -184,11 +182,11 @@ struct EventView: View {
                 ZStack {
                     Circle()
                         .fill(Color(nsColor: .textBackgroundColor))
-                        .frame(width: 12, height: 12)
+                        .frame(width: TimelineConstants.pointEventDotSize, height: TimelineConstants.pointEventDotSize)
                     Circle()
                         .fill(eventColor.opacity(0.1))
                         .strokeBorder(eventColor, lineWidth: 2)
-                        .frame(width: 12, height: 12)
+                        .frame(width: TimelineConstants.pointEventDotSize, height: TimelineConstants.pointEventDotSize)
 
                     if isSelected || dragMode != .none {
                         Circle()
@@ -258,18 +256,18 @@ struct EventView: View {
             displayEndX = originalEndX
         }
 
-        let width = max(displayEndX - displayStartX, 20)
+        let width = max(displayEndX - displayStartX, TimelineConstants.minEventWidth)
         let highlighted = isSelected || dragMode != .none
 
         return eventInteractions(
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: TimelineConstants.spanCornerRadius)
                 .fill(Color(nsColor: .textBackgroundColor))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: TimelineConstants.spanCornerRadius)
                         .fill(eventColor.opacity(0.1))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: TimelineConstants.spanCornerRadius)
                         .strokeBorder(highlighted ? Color.accentColor : eventColor, lineWidth: 2)
                 )
                 .overlay(
@@ -296,7 +294,7 @@ struct EventView: View {
                 .onChanged { value in
                     if dragMode == .none {
                         let localX = value.startLocation.x - spanGlobalOriginX
-                        let frameWidth = max(originalEndX - originalStartX, 20)
+                        let frameWidth = max(originalEndX - originalStartX, TimelineConstants.minEventWidth)
 
                         if localX <= Self.edgeHitZone {
                             dragMode = .resizeStart
@@ -329,34 +327,6 @@ struct EventView: View {
             return hex
         }
         return .blue
-    }
-}
-
-extension Color {
-    init?(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-
-        var rgb: UInt64 = 0
-        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else { return nil }
-
-        let r = Double((rgb & 0xFF0000) >> 16) / 255.0
-        let g = Double((rgb & 0x00FF00) >> 8) / 255.0
-        let b = Double(rgb & 0x0000FF) / 255.0
-
-        self.init(red: r, green: g, blue: b)
-    }
-
-    func toHex() -> String {
-        let nsColor = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(self)
-        var r: CGFloat = 0
-        var g: CGFloat = 0
-        var b: CGFloat = 0
-        nsColor.getRed(&r, green: &g, blue: &b, alpha: nil)
-        return String(format: "#%02X%02X%02X",
-                      Int(round(r * 255)),
-                      Int(round(g * 255)),
-                      Int(round(b * 255)))
     }
 }
 

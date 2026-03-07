@@ -158,7 +158,7 @@ struct TimelineCanvasView: View {
     private func unassignedLaneView(width: CGFloat) -> some View {
         let vp = viewportWithWidth(width)
         let layout = layoutEvents(eventsWithoutLane, viewport: vp)
-        let baseRowHeight: CGFloat = 40
+        let baseRowHeight: CGFloat = TimelineConstants.baseRowHeight
         let labelResult = showPointLabels ? computeLabelPositions(layout: layout, viewport: vp) : (positions: [:], offsets: [:])
         let labelPositions = labelResult.positions
         let labelOffsets = labelResult.offsets
@@ -180,7 +180,7 @@ struct TimelineCanvasView: View {
 
             // Connection lines
             ConnectionLinesShape(lines: lines)
-                .stroke(Color.gray, lineWidth: 3)
+                .stroke(Color.gray, lineWidth: TimelineConstants.connectionLineWidth)
                 .mask(
                     LinearGradient(
                         stops: [

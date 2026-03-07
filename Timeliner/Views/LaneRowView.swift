@@ -15,7 +15,7 @@ struct LaneRowView: View {
     let onCreateEvent: (_ xPosition: CGFloat) -> Void
     var onDragEnd: ((TimelineEvent, FlexibleDate, FlexibleDate?) -> Void)?
 
-    private let baseRowHeight: CGFloat = 40
+    private let baseRowHeight: CGFloat = TimelineConstants.baseRowHeight
 
     private var eventLayout: (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int) {
         layoutEvents(lane.events, viewport: viewport)
@@ -45,7 +45,7 @@ struct LaneRowView: View {
 
             // Connection lines (behind events)
             ConnectionLinesShape(lines: lines)
-                .stroke(laneStrokeColor, lineWidth: 3)
+                .stroke(laneStrokeColor, lineWidth: TimelineConstants.connectionLineWidth)
                 .mask(
                     LinearGradient(
                         stops: [
