@@ -162,6 +162,10 @@ These were explicitly deferred but the model accommodates them:
 5. **Minimap** - Overview navigation for large timelines
 6. **Search** - Find events by title/description
 7. ~~**Eras / Periods**~~ - Implemented in v1.1
+8. **Import/Export** - CSV or JSON data interchange for bringing in external data and sharing timelines
+9. **Keyboard Navigation** - Arrow keys between events, Enter to open inspector, Delete to remove; power-user workflow
+10. **Undo/Redo** - SwiftData + UndoManager integration for model mutations (inspector edits, dragging, creation)
+11. **Multi-Select & Bulk Operations** - Shift/Cmd-click to select multiple events; bulk move, delete, or lane reassignment
 
 ## Design Documents
 
