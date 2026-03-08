@@ -4,16 +4,19 @@ A native macOS document-based app for visualizing events on a horizontal timelin
 
 ## Features
 
-- **Document-based** -- Each timeline is saved as a `.timeliner` file that you can create, open, and share
-- **Flexible dates** -- Events support year, month, day, or hour/minute precision, so you can mix "1776" with "June 15, 2024 at 3:00 PM" on the same timeline
-- **Point and span events** -- Represent moments as dots or durations as bars
-- **Lanes** -- Organize events into horizontal tracks with custom names and colors
-- **Pan and zoom** -- Drag or scroll horizontally to pan; pinch to zoom. Fit-to-content with **Cmd+0**
-- **Adaptive time axis** -- Tick labels adjust from hours to decades depending on zoom level
-- **Drag to move and resize** -- Drag events to reposition them in time; drag the edges of span events to change their start or end date
-- **Event inspector** -- Edit title, description, dates, and precision in a sidebar panel (**Cmd+I**)
-- **Point event labels** -- Toggle labels on point events with **Cmd+L**; labels auto-stagger to avoid overlaps
-- **Connection lines** -- Git-style railroad-track lines connect events within a lane
+- **Document-based** — Each timeline is saved as a `.timeliner` file that you can create, open, and share
+- **Flexible dates** — Events support year, month, day, or hour/minute precision, so you can mix "1776" with "June 15, 2024 at 3:00 PM" on the same timeline
+- **Point and span events** — Represent moments as dots or durations as bars
+- **Lanes** — Organize events into horizontal tracks with custom names and colors
+- **Eras** — Mark date ranges as named background bands that span all lanes (e.g. "Q1", "Vacation")
+- **Pan and zoom** — Drag or scroll horizontally to pan; pinch to zoom. Fit-to-content with **Cmd+0**
+- **Adaptive time axis** — Tick labels adjust from hours to decades depending on zoom level
+- **Drag to move and resize** — Drag events to reposition them in time; drag the edges of span events to change their start or end date
+- **Event inspector** — Edit title, description, dates, precision, and lane assignment in a sidebar panel (**Cmd+I**)
+- **Point event labels** — Toggle labels on point events with **Cmd+L**; labels auto-stagger to avoid overlaps
+- **Connection lines** — Git-style railroad-track lines connect events within a lane
+- **Export** — Export the timeline as a PDF or PNG via **File > Export** (**Shift+Cmd+P** / **Shift+Cmd+G**)
+- **AppleScript** — Full automation support for creating, querying, and modifying events, lanes, and eras
 
 ## Usage
 
@@ -34,11 +37,31 @@ New events are placed at a precision that matches the current zoom level. The in
 
 ### Editing events
 
-Select an event and open the inspector (**Cmd+I**) to edit its title, description, start/end dates, and date precision. Drag events directly on the timeline to reposition them. Drag the left or right edge of a span event to resize it.
+Select an event and open the inspector (**Cmd+I**) to edit its title, description, start/end dates, date precision, and lane. Drag events directly on the timeline to reposition them. Drag the left or right edge of a span event to resize it. Events can be deleted from the inspector.
 
 ### Organizing
 
-Use the sidebar to create and manage lanes. Events without a lane appear in an "Unassigned" section at the bottom.
+Use the sidebar to create and manage lanes and eras. Events without a lane appear in an "Unassigned" section at the bottom.
+
+### Exporting
+
+Use **File > Export > Export as PDF…** (**Shift+Cmd+P**) or **Export as PNG…** (**Shift+Cmd+G**) to save the full timeline as a static image. The export uses the current window width and always includes point event labels. The color scheme (light or dark) matches the app's current appearance.
+
+### AppleScript
+
+Timeliner supports automation via AppleScript:
+
+```applescript
+tell application "Timeliner"
+    set doc to make new document
+    set myLane to make new lane in doc with properties {name:"Work", color:"#3498DB"}
+    make new timeline event in doc with properties {
+        title:"Project Kickoff",
+        start date:"2024-06-01",
+        assigned lane:myLane
+    }
+end tell
+```
 
 ## Building
 
@@ -70,8 +93,9 @@ xcodebuild test -scheme Timeliner -destination 'platform=macOS' -only-testing:Ti
 | `FlexibleDate` | Variable-precision date (year through minute) with timezone-aware storage |
 | `TimelineEvent` | Title, description, start/end `FlexibleDate`, and lane |
 | `Lane` | Named horizontal track with color and sort order |
+| `Era` | Named date range rendered as a background band across all lanes |
 
-`FlexibleDate` is stored as JSON-encoded `Data` inside `TimelineEvent` since SwiftData doesn't natively support custom value types. Day-precision and coarser dates store raw calendar values; time-precision dates store UTC internally and convert to local time for display.
+`FlexibleDate` is stored as JSON-encoded `Data` inside `TimelineEvent` and `Era` since SwiftData doesn't natively support custom value types. Day-precision and coarser dates store raw calendar values; time-precision dates store UTC internally and convert to local time for display.
 
 ### Document format
 
@@ -82,13 +106,15 @@ MyTimeline.timeliner/
   default.store     # SwiftData SQLite database
 ```
 
+The schema is versioned. The current version is 1.1.0, which added `Era` support via a lightweight migration from 1.0.0.
+
 ### Coordinate system
 
 `TimelineViewport` maps between dates and screen x-positions:
 
-- `centerDate` -- the date at the center of the viewport
-- `scale` -- seconds per point (higher values = more zoomed out)
-- `xPosition(for:)` / `date(forX:)` -- bidirectional conversion
+- `centerDate` — the date at the center of the viewport
+- `scale` — seconds per point (higher values = more zoomed out)
+- `xPosition(for:)` / `date(forX:)` — bidirectional conversion
 
 ### Layout
 
