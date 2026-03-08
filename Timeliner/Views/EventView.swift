@@ -292,7 +292,7 @@ struct EventView: View {
                         .font(.caption)
                         .lineLimit(1)
                         .padding(.horizontal, 4)
-                        .foregroundColor(.white),
+                        .foregroundColor(eventColor),
                     alignment: .leading
                 )
                 .frame(width: width, height: eventHeight)

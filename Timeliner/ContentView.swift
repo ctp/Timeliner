@@ -26,6 +26,14 @@ struct CreateSpanEventKey: FocusedValueKey {
     typealias Value = Binding<Bool>
 }
 
+struct ExportPDFKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
+struct ExportPNGKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
 extension FocusedValues {
     var fitToContent: Binding<Bool>? {
         get { self[FitToContentKey.self] }
@@ -51,16 +59,34 @@ extension FocusedValues {
         get { self[CreateSpanEventKey.self] }
         set { self[CreateSpanEventKey.self] = newValue }
     }
+
+    var exportPDF: Binding<Bool>? {
+        get { self[ExportPDFKey.self] }
+        set { self[ExportPDFKey.self] = newValue }
+    }
+
+    var exportPNG: Binding<Bool>? {
+        get { self[ExportPNGKey.self] }
+        set { self[ExportPNGKey.self] = newValue }
+    }
 }
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.undoManager) private var undoManager
+    @Environment(\.colorScheme) private var colorScheme
+    @Query(sort: \Lane.sortOrder) private var lanes: [Lane]
+    @Query private var allEvents: [TimelineEvent]
+    @Query(sort: \Era.sortOrder) private var eras: [Era]
+
     @State private var fitToContent = false
     @State private var showPointLabels = false
     @State private var showInspector = false
     @State private var createPointEvent = false
     @State private var createSpanEvent = false
+    @State private var exportPDF = false
+    @State private var exportPNG = false
+    @State private var canvasWidth: CGFloat = 800
     @State private var registryID: UUID?
     @State private var editingLane: Lane?
     @State private var editingEra: Era?
@@ -95,7 +121,7 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, createPointEvent: $createPointEvent, createSpanEvent: $createSpanEvent)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, createPointEvent: $createPointEvent, createSpanEvent: $createSpanEvent, canvasWidth: $canvasWidth)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -119,6 +145,38 @@ struct ContentView: View {
         .focusedSceneValue(\.showInspector, $showInspector)
         .focusedSceneValue(\.createPointEvent, $createPointEvent)
         .focusedSceneValue(\.createSpanEvent, $createSpanEvent)
+        .focusedSceneValue(\.exportPDF, $exportPDF)
+        .focusedSceneValue(\.exportPNG, $exportPNG)
+        .onChange(of: exportPDF) { _, triggered in
+            guard triggered else { return }
+            exportPDF = false
+            let documentTitle = NSDocumentController.shared.documents.first {
+                $0.undoManager === undoManager
+            }?.displayName ?? ""
+            TimelineExporter.exportPDF(
+                events: allEvents,
+                lanes: lanes,
+                eras: eras,
+                colorScheme: colorScheme,
+                canvasWidth: canvasWidth,
+                documentTitle: documentTitle
+            )
+        }
+        .onChange(of: exportPNG) { _, triggered in
+            guard triggered else { return }
+            exportPNG = false
+            let documentTitle = NSDocumentController.shared.documents.first {
+                $0.undoManager === undoManager
+            }?.displayName ?? ""
+            TimelineExporter.exportPNG(
+                events: allEvents,
+                lanes: lanes,
+                eras: eras,
+                colorScheme: colorScheme,
+                canvasWidth: canvasWidth,
+                documentTitle: documentTitle
+            )
+        }
         .onAppear {
             registerWithScriptingBridge()
         }

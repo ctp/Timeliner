@@ -25,8 +25,26 @@ struct TimelineCommands: Commands {
     @FocusedBinding(\.showInspector) private var showInspector
     @FocusedBinding(\.createPointEvent) private var createPointEvent
     @FocusedBinding(\.createSpanEvent) private var createSpanEvent
+    @FocusedBinding(\.exportPDF) private var exportPDF
+    @FocusedBinding(\.exportPNG) private var exportPNG
 
     var body: some Commands {
+        CommandGroup(after: .saveItem) {
+            Menu("Export") {
+                Button("Export as PDF\u{2026}") {
+                    exportPDF = true
+                }
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+                .disabled(exportPDF == nil)
+
+                Button("Export as PNG\u{2026}") {
+                    exportPNG = true
+                }
+                .keyboardShortcut("g", modifiers: [.command, .shift])
+                .disabled(exportPNG == nil)
+            }
+        }
+
         CommandGroup(after: .newItem) {
             Divider()
             Button("New Point Event") {

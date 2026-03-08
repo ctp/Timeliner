@@ -19,6 +19,7 @@ struct TimelineCanvasView: View {
     @Binding var showInspector: Bool
     @Binding var createPointEvent: Bool
     @Binding var createSpanEvent: Bool
+    @Binding var canvasWidth: CGFloat
 
     @State private var viewport: TimelineViewport
     @State private var selectedEventID: UUID?
@@ -26,12 +27,13 @@ struct TimelineCanvasView: View {
     @State private var dragStartCenter: Date?
     @State private var hasAutoFitted = false
 
-    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, createPointEvent: Binding<Bool>, createSpanEvent: Binding<Bool>) {
+    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, createPointEvent: Binding<Bool>, createSpanEvent: Binding<Bool>, canvasWidth: Binding<CGFloat>) {
         _fitToContent = fitToContent
         _showPointLabels = showPointLabels
         _showInspector = showInspector
         _createPointEvent = createPointEvent
         _createSpanEvent = createSpanEvent
+        _canvasWidth = canvasWidth
         _viewport = State(initialValue: TimelineViewport(
             centerDate: Date(),
             scale: 86400 * 30, // ~1 month per point initially
@@ -100,6 +102,10 @@ struct TimelineCanvasView: View {
             }
             .onAppear {
                 viewport.viewportWidth = geometry.size.width
+                canvasWidth = geometry.size.width
+            }
+            .onChange(of: geometry.size.width) { _, newWidth in
+                canvasWidth = newWidth
             }
             .task {
                 // Wait for SwiftData to finish loading events before auto-fitting
@@ -376,7 +382,7 @@ struct TimelineCanvasView: View {
 }
 
 #Preview {
-    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), createPointEvent: .constant(false), createSpanEvent: .constant(false))
+    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), createPointEvent: .constant(false), createSpanEvent: .constant(false), canvasWidth: .constant(800))
         .modelContainer(for: [TimelineEvent.self, Lane.self, Era.self], inMemory: true)
         .frame(width: 800, height: 400)
 }
