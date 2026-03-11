@@ -18,14 +18,6 @@ struct ShowInspectorKey: FocusedValueKey {
     typealias Value = Binding<Bool>
 }
 
-struct CreatePointEventKey: FocusedValueKey {
-    typealias Value = Binding<Bool>
-}
-
-struct CreateSpanEventKey: FocusedValueKey {
-    typealias Value = Binding<Bool>
-}
-
 struct ExportPDFKey: FocusedValueKey {
     typealias Value = Binding<Bool>
 }
@@ -50,16 +42,6 @@ extension FocusedValues {
         set { self[ShowInspectorKey.self] = newValue }
     }
 
-    var createPointEvent: Binding<Bool>? {
-        get { self[CreatePointEventKey.self] }
-        set { self[CreatePointEventKey.self] = newValue }
-    }
-
-    var createSpanEvent: Binding<Bool>? {
-        get { self[CreateSpanEventKey.self] }
-        set { self[CreateSpanEventKey.self] = newValue }
-    }
-
     var exportPDF: Binding<Bool>? {
         get { self[ExportPDFKey.self] }
         set { self[ExportPDFKey.self] = newValue }
@@ -82,8 +64,6 @@ struct ContentView: View {
     @State private var fitToContent = false
     @State private var showPointLabels = false
     @State private var showInspector = false
-    @State private var createPointEvent = false
-    @State private var createSpanEvent = false
     @State private var exportPDF = false
     @State private var exportPNG = false
     @State private var canvasWidth: CGFloat = 800
@@ -121,7 +101,7 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, createPointEvent: $createPointEvent, createSpanEvent: $createSpanEvent, canvasWidth: $canvasWidth)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, canvasWidth: $canvasWidth)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -143,8 +123,6 @@ struct ContentView: View {
         .focusedSceneValue(\.fitToContent, $fitToContent)
         .focusedSceneValue(\.showPointLabels, $showPointLabels)
         .focusedSceneValue(\.showInspector, $showInspector)
-        .focusedSceneValue(\.createPointEvent, $createPointEvent)
-        .focusedSceneValue(\.createSpanEvent, $createSpanEvent)
         .focusedSceneValue(\.exportPDF, $exportPDF)
         .focusedSceneValue(\.exportPNG, $exportPNG)
         .onChange(of: exportPDF) { _, triggered in

@@ -17,8 +17,6 @@ struct TimelineCanvasView: View {
     @Binding var fitToContent: Bool
     @Binding var showPointLabels: Bool
     @Binding var showInspector: Bool
-    @Binding var createPointEvent: Bool
-    @Binding var createSpanEvent: Bool
     @Binding var canvasWidth: CGFloat
 
     @State private var viewport: TimelineViewport
@@ -27,12 +25,10 @@ struct TimelineCanvasView: View {
     @State private var dragStartCenter: Date?
     @State private var hasAutoFitted = false
 
-    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, createPointEvent: Binding<Bool>, createSpanEvent: Binding<Bool>, canvasWidth: Binding<CGFloat>) {
+    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>) {
         _fitToContent = fitToContent
         _showPointLabels = showPointLabels
         _showInspector = showInspector
-        _createPointEvent = createPointEvent
-        _createSpanEvent = createSpanEvent
         _canvasWidth = canvasWidth
         _viewport = State(initialValue: TimelineViewport(
             centerDate: Date(),
@@ -77,9 +73,6 @@ struct TimelineCanvasView: View {
                                     selectedEventID: selectedEventID,
                                     onSelectEvent: { event in
                                         selectedEventID = event.id
-                                    },
-                                    onCreateEvent: { xPosition in
-                                        createPointEvent(at: xPosition, in: lane, viewportWidth: geometry.size.width)
                                     },
                                     onDragEnd: { event, newStart, newEnd in
                                         applyDrag(event: event, newStart: newStart, newEnd: newEnd)
@@ -128,22 +121,10 @@ struct TimelineCanvasView: View {
                     fitToContent = false
                 }
             }
-            .onChange(of: createPointEvent) { _, shouldCreate in
-                if shouldCreate {
-                    createEventFromMenu(span: false, viewportWidth: geometry.size.width)
-                    createPointEvent = false
-                }
-            }
-            .onChange(of: createSpanEvent) { _, shouldCreate in
-                if shouldCreate {
-                    createEventFromMenu(span: true, viewportWidth: geometry.size.width)
-                    createSpanEvent = false
-                }
-            }
         }
         .background(Color(nsColor: .textBackgroundColor))
         .inspector(isPresented: $showInspector) {
-            EventInspectorView(event: selectedEvent, onDelete: { selectedEventID = nil })
+            EventInspectorView(event: selectedEvent)
                 .inspectorColumnWidth(min: 250, ideal: 300, max: 400)
         }
     }
@@ -322,58 +303,6 @@ struct TimelineCanvasView: View {
             }
     }
 
-    private func createPointEvent(at xPosition: CGFloat, in lane: Lane, viewportWidth: CGFloat) {
-        let vp = viewportWithWidth(viewportWidth)
-        let precision = vp.currentPrecision()
-        let rawDate = vp.date(forX: xPosition)
-        let snapped = vp.snappedDate(from: rawDate, precision: precision)
-        let fd = flexibleDate(from: snapped, precision: precision)
-        let title = titleForDate(snapped, precision: precision)
-
-        let event = TimelineEvent(title: title, startDate: fd, lane: lane)
-        modelContext.insert(event)
-        try? modelContext.save()
-        selectedEventID = event.id
-        showInspector = true
-    }
-
-    private func createEventFromMenu(span: Bool, viewportWidth: CGFloat) {
-        let lane: Lane? = if let selectedEvent {
-            selectedEvent.lane
-        } else {
-            lanes.first
-        }
-
-        let vp = viewportWithWidth(viewportWidth)
-        let precision = vp.currentPrecision()
-        let snapped = vp.snappedDate(from: vp.centerDate, precision: precision)
-        let startFD = flexibleDate(from: snapped, precision: precision)
-        let title = titleForDate(snapped, precision: precision)
-
-        var endFD: FlexibleDate? = nil
-        if span {
-            let cal = Calendar.current
-            let endDate: Date
-            switch precision {
-            case .time:
-                endDate = cal.date(byAdding: .hour, value: 4, to: snapped)!
-            case .day:
-                endDate = cal.date(byAdding: .day, value: 7, to: snapped)!
-            case .month:
-                endDate = cal.date(byAdding: .month, value: 3, to: snapped)!
-            case .year:
-                endDate = cal.date(byAdding: .year, value: 5, to: snapped)!
-            }
-            endFD = flexibleDate(from: endDate, precision: precision)
-        }
-
-        let event = TimelineEvent(title: title, startDate: startFD, endDate: endFD, lane: lane)
-        modelContext.insert(event)
-        try? modelContext.save()
-        selectedEventID = event.id
-        showInspector = true
-    }
-
     private func applyDrag(event: TimelineEvent, newStart: FlexibleDate, newEnd: FlexibleDate?) {
         event.startDate = newStart
         event.endDate = newEnd
@@ -382,7 +311,7 @@ struct TimelineCanvasView: View {
 }
 
 #Preview {
-    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), createPointEvent: .constant(false), createSpanEvent: .constant(false), canvasWidth: .constant(800))
+    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), canvasWidth: .constant(800))
         .modelContainer(for: [TimelineEvent.self, Lane.self, Era.self], inMemory: true)
         .frame(width: 800, height: 400)
 }
