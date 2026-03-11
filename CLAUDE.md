@@ -82,7 +82,7 @@ Timeliner/
 │   ├── EventView.swift
 │   ├── LaneRowView.swift
 │   ├── EraBandView.swift          # Background band for era/period date ranges
-│   ├── EventInspectorView.swift  # Trailing inspector for editing events
+│   ├── EventInspectorView.swift  # Read-only trailing inspector with copy-to-clipboard
 │   ├── FlexibleDateEditor.swift  # Reusable progressive date fields
 │   └── Sidebar/
 │       ├── LaneListView.swift
@@ -126,7 +126,9 @@ xcodebuild build -scheme Timeliner -destination 'platform=macOS'
 open ~/Library/Developer/Xcode/DerivedData/Timeliner-*/Build/Products/Debug/Timeliner.app
 ```
 
-## Current State (v1 Complete)
+## Current State (v1.2 — AI-Driven UI)
+
+**Editing model:** Timeliner is a visualization-first app. The primary editing interface is Claude Code driving the app via AppleScript (`osascript`). The app UI is for viewing timelines and spatial interactions (dragging events). Event/lane/era creation and property editing are done through AppleScript CRUD commands.
 
 Implemented:
 - ✅ Core data model with FlexibleDate precision
@@ -135,19 +137,17 @@ Implemented:
 - ✅ Stacked lane rows with interval-collision layout (spans pack into the first sub-row with no actual overlap; point events always occupy row 0, spans only bump down on real collisions; lanes expand dynamically)
 - ✅ Point events (dots with outline) and span events (bars with outline and tinted lane-color fill)
 - ✅ Git-style connection lines: railroad-track graph with 3pt lane-colored lines, S-curve fork/merge connectors, gradient fade at viewport edges
-- ✅ Pan (drag on time axis, or horizontal trackpad/scroll wheel anywhere) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); scroll input via NSEvent local monitor with hit-test scoping so vertical lane scrolling and inspector scrolling coexist; lane area reserved for future event dragging
+- ✅ Pan (drag on time axis, or horizontal trackpad/scroll wheel anywhere) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); scroll input via NSEvent local monitor with hit-test scoping so vertical lane scrolling and inspector scrolling coexist
 - ✅ Fit-to-content viewport scaling (auto-fits on document load via async task, toolbar button, and View menu item with ⌘0)
 - ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds and calendar-anchored label cadence (labels stay stable during resize/scroll)
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
-- ✅ Sidebar for lane management
+- ✅ Sidebar for lane and era management (CRUD)
 - ✅ System tooltips on events showing title (replaced hover popovers to avoid click interference)
 - ✅ Point event labels: toggled via View > Show Point Labels (⌘L) and toolbar button, with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
 - ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans and point events
-- ✅ Point event creation: double-click on lane row to create a point event with zoom-appropriate precision and auto-generated title from date
-- ✅ Event inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; live-edits title, description, start/end dates with segmented precision picker (Year|Month|Day|Time) for FlexibleDate fields; lane reassignment via Picker (with colored circles); delete button with confirmation dialog; auto-opens on event creation; changing start date shifts end date to preserve duration; end date clamped to at least one day after start; FlexibleDateEditor syncs from external binding changes
-- ✅ Menu event creation: File > New Point Event (⌘E) and New Span Event (⇧⌘E); places at viewport center, uses selected event's lane (fallback to first lane); span default durations vary by precision (time: +4h, day: +7d, month: +3mo, year: +5yr); auto-selects and opens inspector
+- ✅ Read-only event inspector: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; displays title, description, lane, start/end dates as non-editable text with text selection; copy-to-clipboard button for structured event summary
 - ✅ Event dragging: drag point or span events to move them in time; drag left/right edges of spans to resize (change start/end date); 6pt edge hit zones for resize detection; dates snap to event's own precision on commit; minimum duration of one precision unit enforced; global coordinate space for jitter-free dragging; GeometryReader-based edge detection for spans
-- ✅ AppleScript support: full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). **Known limitation:** `save`, `close`, and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
+- ✅ AppleScript support (primary editing interface): full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event`, `make new era` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event/Era) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). **Known limitation:** `save`, `close`, and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
 - ✅ Lane color picker: click a lane in the sidebar to open an editor sheet with name and ColorPicker; new-lane flow also includes a ColorPicker instead of hardcoded blue; `Color.toHex()` extension for Color↔hex conversion; sheet presented on List (not inside List cells) to avoid SwiftUI re-presentation bugs
 - ✅ Eras / Periods: cross-lane date ranges rendered as subtle background bands spanning all lanes; managed via sidebar "Eras" section with CRUD (add, edit name + start/end dates, delete, reorder); `EraBandView` renders with horizontal fade-in/fade-out at edges and centered name label with background pill; fixed `Color.primary.opacity(0.06)` color (works in light/dark mode); sample data includes "Sprint Phase" and "Vacation Season" eras; full AppleScript support (`make new era`, `delete era`, property get/set); schema migration v1.0.0 → v1.1.0
 
@@ -178,6 +178,8 @@ These were explicitly deferred but the model accommodates them:
 - `docs/plans/2026-02-02-event-inspector.md` - Implementation plan for event inspector (completed)
 - `docs/plans/2026-02-02-event-dragging-design.md` - Design for event dragging (move and resize)
 - `docs/plans/2026-02-13-applescript-support-design.md` - Design for AppleScript automation support
+- `docs/plans/2026-03-10-ai-driven-ui-design.md` - Design for AI-driven UI model (visualization-first)
+- `docs/plans/2026-03-10-ai-driven-ui-implementation.md` - Implementation plan for AI-driven UI
 
 ## Git Remote
 
