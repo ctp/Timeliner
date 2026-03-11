@@ -12,7 +12,6 @@ struct LaneRowView: View {
     let showPointLabels: Bool
     let selectedEventID: UUID?
     let onSelectEvent: (TimelineEvent) -> Void
-    let onCreateEvent: (_ xPosition: CGFloat) -> Void
     var onDragEnd: ((TimelineEvent, FlexibleDate, FlexibleDate?) -> Void)?
 
     private let baseRowHeight: CGFloat = TimelineConstants.baseRowHeight
@@ -91,16 +90,6 @@ struct LaneRowView: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Lane: \(lane.name)")
-        .gesture(
-            SpatialTapGesture(count: 2)
-                .onEnded { value in
-                    onCreateEvent(value.location.x)
-                }
-        )
-        .accessibilityAction(named: "Create Event") {
-            // Trigger creation at the horizontal centre of the lane
-            onCreateEvent(0)
-        }
     }
 
     private var laneStrokeColor: Color {
@@ -125,8 +114,7 @@ struct LaneRowView: View {
         viewport: TimelineViewport(),
         showPointLabels: false,
         selectedEventID: nil,
-        onSelectEvent: { _ in },
-        onCreateEvent: { _ in }
+        onSelectEvent: { _ in }
     )
     .frame(width: 600)
 }
