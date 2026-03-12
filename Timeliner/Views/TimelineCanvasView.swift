@@ -18,24 +18,19 @@ struct TimelineCanvasView: View {
     @Binding var showPointLabels: Bool
     @Binding var showInspector: Bool
     @Binding var canvasWidth: CGFloat
-
-    @State private var viewport: TimelineViewport
+    @Binding var viewport: TimelineViewport
     @State private var selectedEventID: UUID?
     @State private var isDragging = false
     @State private var dragStartCenter: Date?
     @State private var hasAutoFitted = false
     @State private var zoomStartScale: Double?
 
-    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>) {
+    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>, viewport: Binding<TimelineViewport>) {
         _fitToContent = fitToContent
         _showPointLabels = showPointLabels
         _showInspector = showInspector
         _canvasWidth = canvasWidth
-        _viewport = State(initialValue: TimelineViewport(
-            centerDate: Date(),
-            scale: 86400 * 30, // ~1 month per point initially
-            viewportWidth: 800
-        ))
+        _viewport = viewport
     }
 
     var body: some View {
@@ -318,7 +313,7 @@ struct TimelineCanvasView: View {
 }
 
 #Preview {
-    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), canvasWidth: .constant(800))
+    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), canvasWidth: .constant(800), viewport: .constant(TimelineViewport()))
         .modelContainer(for: [TimelineEvent.self, Lane.self, Era.self], inMemory: true)
         .frame(width: 800, height: 400)
 }

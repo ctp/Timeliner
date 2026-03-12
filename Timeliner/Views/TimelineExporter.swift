@@ -20,17 +20,17 @@ enum TimelineExporter {
         lanes: [Lane],
         eras: [Era],
         colorScheme: ColorScheme,
-        canvasWidth: CGFloat,
+        viewport: TimelineViewport,
         documentTitle: String
     ) {
         // Always show point labels in the exported PDF — it's a static document.
         let showPointLabels = true
 
-        guard let (exportWidth, totalHeight, viewport) = computeExportGeometry(
+        guard let (exportWidth, totalHeight, exportViewport) = computeExportGeometry(
             events: events,
             lanes: lanes,
             showPointLabels: showPointLabels,
-            canvasWidth: canvasWidth
+            viewport: viewport
         ) else {
             // Nothing to export (no events)
             return
@@ -49,7 +49,7 @@ enum TimelineExporter {
             eras: eras,
             showPointLabels: showPointLabels,
             colorScheme: colorScheme,
-            viewport: viewport,
+            viewport: exportViewport,
             exportWidth: exportWidth,
             totalHeight: totalHeight
         )
@@ -81,16 +81,16 @@ enum TimelineExporter {
         lanes: [Lane],
         eras: [Era],
         colorScheme: ColorScheme,
-        canvasWidth: CGFloat,
+        viewport: TimelineViewport,
         documentTitle: String
     ) {
         let showPointLabels = true
 
-        guard let (exportWidth, totalHeight, viewport) = computeExportGeometry(
+        guard let (exportWidth, totalHeight, exportViewport) = computeExportGeometry(
             events: events,
             lanes: lanes,
             showPointLabels: showPointLabels,
-            canvasWidth: canvasWidth
+            viewport: viewport
         ) else { return }
 
         let panel = NSSavePanel()
@@ -106,36 +106,61 @@ enum TimelineExporter {
             eras: eras,
             showPointLabels: showPointLabels,
             colorScheme: colorScheme,
-            viewport: viewport,
+            viewport: exportViewport,
             exportWidth: exportWidth,
             totalHeight: totalHeight
         )
 
         let renderer = ImageRenderer(content: exportView)
         renderer.proposedSize = ProposedViewSize(width: exportWidth, height: totalHeight)
-        renderer.scale = 2.0  // @2x for crisp output
 
-        guard let cgImage = renderer.cgImage else { return }
+        // Use render() rather than cgImage — cgImage can silently return nil for
+        // views with complex SwiftUI environments. render() is always synchronous.
+        let scale: CGFloat = 2.0  // @2x for crisp output
+        var pngData: Data?
+        renderer.render { size, draw in
+            let pixelWidth  = Int(size.width  * scale)
+            let pixelHeight = Int(size.height * scale)
+            guard pixelWidth > 0, pixelHeight > 0 else { return }
 
-        let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
-        guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else { return }
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let ctx = CGContext(
+                data: nil,
+                width: pixelWidth,
+                height: pixelHeight,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return }
 
-        try? pngData.write(to: url)
+            ctx.scaleBy(x: scale, y: scale)
+            draw(ctx)
+
+            guard let cgImage = ctx.makeImage() else { return }
+            let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
+            pngData = bitmapRep.representation(using: .png, properties: [:])
+        }
+
+        guard let data = pngData else { return }
+        try? data.write(to: url)
     }
 
     // MARK: - Geometry Calculation
 
-    /// Returns (exportWidth, totalHeight, viewport) sized to fit all events.
+    /// Returns (exportWidth, totalHeight, exportViewport) for the given live viewport.
+    /// The export width is derived from the live viewport's scale applied to the full
+    /// event date range, so the export matches what is visible at the current zoom level.
     /// Returns nil if there are no events.
     private static func computeExportGeometry(
         events: [TimelineEvent],
         lanes: [Lane],
         showPointLabels: Bool,
-        canvasWidth: CGFloat
+        viewport: TimelineViewport
     ) -> (exportWidth: CGFloat, totalHeight: CGFloat, viewport: TimelineViewport)? {
         guard !events.isEmpty else { return nil }
 
-        // Find date bounds across all events (same as TimelineCanvasView.eventDateBounds)
+        // Find date bounds across all events
         var earliest = Date.distantFuture
         var latest = Date.distantPast
         for event in events {
@@ -151,14 +176,14 @@ enum TimelineExporter {
         let rangeSeconds = latest.timeIntervalSince(earliest)
         let effectiveRange = rangeSeconds > 0 ? rangeSeconds * 1.4 : 86400 * 2
 
-        // Use the actual canvas width so the PDF matches the window width.
-        let exportWidth: CGFloat = max(canvasWidth, 400)
+        // Derive the export canvas width from the live viewport scale.
+        // This makes the export match the current zoom level rather than fit-to-content.
+        let exportWidth: CGFloat = max(400, CGFloat(effectiveRange / viewport.scale))
 
-        let scale = effectiveRange / Double(exportWidth)
         let centerDate = earliest.addingTimeInterval(rangeSeconds / 2)
-        let viewport = TimelineViewport(
+        let exportViewport = TimelineViewport(
             centerDate: centerDate,
-            scale: scale,
+            scale: viewport.scale,
             viewportWidth: exportWidth
         )
 
@@ -173,14 +198,14 @@ enum TimelineExporter {
             let laneEventsForLane = laneEvents.filter { $0.lane?.id == lane.id }
             lanesHeight += laneRowHeight(
                 events: laneEventsForLane,
-                viewport: viewport,
+                viewport: exportViewport,
                 showPointLabels: showPointLabels
             )
         }
         if !unassigned.isEmpty {
             lanesHeight += laneRowHeight(
                 events: unassigned,
-                viewport: viewport,
+                viewport: exportViewport,
                 showPointLabels: showPointLabels
             )
         }
@@ -191,7 +216,7 @@ enum TimelineExporter {
 
         let totalHeight = axisHeight + lanesHeight + spacingHeight
 
-        return (exportWidth, totalHeight, viewport)
+        return (exportWidth, totalHeight, exportViewport)
     }
 
     /// Compute the rendered height for one lane's events, mirroring LaneRowView's logic.

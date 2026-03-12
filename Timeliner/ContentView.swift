@@ -67,6 +67,7 @@ struct ContentView: View {
     @State private var exportPDF = false
     @State private var exportPNG = false
     @State private var canvasWidth: CGFloat = 800
+    @State private var viewport = TimelineViewport(centerDate: Date(), scale: 86400 * 30, viewportWidth: 800)
     @State private var registryID: UUID?
     @State private var editingLane: Lane?
     @State private var editingEra: Era?
@@ -101,7 +102,7 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, canvasWidth: $canvasWidth)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, canvasWidth: $canvasWidth, viewport: $viewport)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -136,7 +137,7 @@ struct ContentView: View {
                 lanes: lanes,
                 eras: eras,
                 colorScheme: colorScheme,
-                canvasWidth: canvasWidth,
+                viewport: viewport,
                 documentTitle: documentTitle
             )
         }
@@ -151,7 +152,7 @@ struct ContentView: View {
                 lanes: lanes,
                 eras: eras,
                 colorScheme: colorScheme,
-                canvasWidth: canvasWidth,
+                viewport: viewport,
                 documentTitle: documentTitle
             )
         }
