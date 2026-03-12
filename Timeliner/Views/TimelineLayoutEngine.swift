@@ -136,43 +136,133 @@ func computeLabelPositions(layout: (layout: [(event: TimelineEvent, subRow: Int)
 
     // Assign each label to the first free slot in an interleaved above/below sequence:
     // above(0), below(0), above(1), below(1), … growing both directions as needed.
-    // Labels stay centred over their event x-position so connectors never disconnect.
-    // No horizontal offsets are applied.
-    var aboveTiers: [[(startX: CGFloat, endX: CGFloat)]] = []
-    var belowTiers: [[(startX: CGFloat, endX: CGFloat)]] = []
+    //
+    // For each candidate slot we first try the label centred over its event (offset = 0).
+    // If a higher-tier connector would pierce the label text, we try sliding the label
+    // horizontally just enough to clear all piercing connectors — left or right, whichever
+    // is smaller — then check that the shifted extent doesn't collide with other labels
+    // already in that tier. If a valid shift exists we accept the slot with that offset;
+    // only if no shift works do we reject the slot and try the next tier/side.
+    //
+    // The connector line is always drawn vertically at eventX regardless of offset, so
+    // the label stays connected to its dot at all offsets.
 
-    func collidesInTier(_ intervals: [(startX: CGFloat, endX: CGFloat)], start: CGFloat, end: CGFloat) -> Bool {
-        intervals.contains { start < $0.endX && end > $0.startX }
+    struct TierEntry {
+        let labelStart: CGFloat   // after applying offset
+        let labelEnd: CGFloat
+        let eventX: CGFloat
+        let offset: CGFloat
     }
+
+    var aboveTiers: [[TierEntry]] = []
+    var belowTiers: [[TierEntry]] = []
+
+    func labelCollides(_ entries: [TierEntry], labelStart: CGFloat, labelEnd: CGFloat) -> Bool {
+        entries.contains { labelStart < $0.labelEnd && labelEnd > $0.labelStart }
+    }
+
+    // Collect all higher-tier connector x-positions that fall inside [labelStart, labelEnd].
+    func piercingConnectors(_ higherTiers: [[TierEntry]], labelStart: CGFloat, labelEnd: CGFloat) -> [CGFloat] {
+        var xs: [CGFloat] = []
+        for tier in higherTiers {
+            for entry in tier where entry.eventX > labelStart && entry.eventX < labelEnd {
+                xs.append(entry.eventX)
+            }
+        }
+        return xs
+    }
+
+    // Given a label's unshifted [labelStart, labelEnd] and the set of piercing connector
+    // x-positions, compute the smallest horizontal offset (left or right) that clears all
+    // piercers, then verify it doesn't collide with existing same-tier labels.
+    // Returns the offset if a valid placement exists, nil if the slot should be rejected.
+    func bestOffset(
+        labelStart: CGFloat, labelEnd: CGFloat, labelWidth: CGFloat,
+        piercers: [CGFloat], sameTier: [TierEntry]
+    ) -> CGFloat? {
+        if piercers.isEmpty {
+            // No connector-piercing issue; just check label-label collision at center.
+            return labelCollides(sameTier, labelStart: labelStart, labelEnd: labelEnd) ? nil : 0
+        }
+
+        // Minimum gap to keep between a connector line and the label edge.
+        let gap: CGFloat = 2
+
+        // Shift right: move label so its left edge is past the rightmost piercer.
+        let rightmostPiercer = piercers.max()!
+        let rightShift = (rightmostPiercer + gap) - labelStart
+        let rStart = labelStart + rightShift
+        let rEnd   = labelEnd   + rightShift
+        let rightOk = !labelCollides(sameTier, labelStart: rStart, labelEnd: rEnd)
+
+        // Shift left: move label so its right edge is before the leftmost piercer.
+        let leftmostPiercer = piercers.min()!
+        let leftShift = labelEnd - (leftmostPiercer - gap)
+        let lStart = labelStart - leftShift
+        let lEnd   = labelEnd   - leftShift
+        let leftOk = !labelCollides(sameTier, labelStart: lStart, labelEnd: lEnd)
+
+        switch (rightOk, leftOk) {
+        case (true, true):   return rightShift <= leftShift ? rightShift : -leftShift
+        case (true, false):  return rightShift
+        case (false, true):  return -leftShift
+        case (false, false): return nil
+        }
+    }
+
+    var offsets: [UUID: CGFloat] = [:]
 
     for item in points {
         let x = viewport.xPosition(for: item.event.startDate.asDate)
         let titleWidth = CGFloat(item.event.title.count) * charWidth
-        let halfWidth = (titleWidth + labelPadding) / 2
+        let labelWidth = titleWidth + labelPadding
+        let halfWidth  = labelWidth / 2
         let labelStart = x - halfWidth
         let labelEnd   = x + halfWidth
 
         var tier = 0
         while true {
-            // Try above(tier)
+            // ── Try above(tier) ──
             if tier == aboveTiers.count { aboveTiers.append([]) }
-            if !collidesInTier(aboveTiers[tier], start: labelStart, end: labelEnd) {
+            let aboveHigher = Array(aboveTiers.dropFirst(tier + 1))
+            let abovePiercers = piercingConnectors(aboveHigher, labelStart: labelStart, labelEnd: labelEnd)
+            let sameTierAbove = aboveTiers[tier]
+            if let offset = bestOffset(
+                labelStart: labelStart, labelEnd: labelEnd, labelWidth: labelWidth,
+                piercers: abovePiercers, sameTier: sameTierAbove
+            ) {
                 positions[item.event.id] = .above(tier: tier)
-                aboveTiers[tier].append((startX: labelStart, endX: labelEnd))
+                offsets[item.event.id] = offset
+                aboveTiers[tier].append(TierEntry(
+                    labelStart: labelStart + offset, labelEnd: labelEnd + offset,
+                    eventX: x, offset: offset
+                ))
                 break
             }
-            // Try below(tier)
+
+            // ── Try below(tier) ──
             if tier == belowTiers.count { belowTiers.append([]) }
-            if !collidesInTier(belowTiers[tier], start: labelStart, end: labelEnd) {
+            let belowHigher = Array(belowTiers.dropFirst(tier + 1))
+            let belowPiercers = piercingConnectors(belowHigher, labelStart: labelStart, labelEnd: labelEnd)
+            let sameTierBelow = belowTiers[tier]
+            if let offset = bestOffset(
+                labelStart: labelStart, labelEnd: labelEnd, labelWidth: labelWidth,
+                piercers: belowPiercers, sameTier: sameTierBelow
+            ) {
                 positions[item.event.id] = .below(tier: tier)
-                belowTiers[tier].append((startX: labelStart, endX: labelEnd))
+                offsets[item.event.id] = offset
+                belowTiers[tier].append(TierEntry(
+                    labelStart: labelStart + offset, labelEnd: labelEnd + offset,
+                    eventX: x, offset: offset
+                ))
                 break
             }
+
             tier += 1
         }
     }
 
-    return (positions, [:])
+    return (positions, offsets)
 }
 
 func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)], viewport: TimelineViewport, baseRowHeight: CGFloat, yOffset: CGFloat = 0) -> ConnectionLines {
