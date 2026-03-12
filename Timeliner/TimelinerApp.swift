@@ -9,12 +9,40 @@ import UniformTypeIdentifiers
 
 @main
 struct TimelinerApp: App {
+    @NSApplicationDelegateAdaptor private var appDelegate: TimelinerAppDelegate
+
     var body: some Scene {
         DocumentGroup(editing: .timelinerDocument, migrationPlan: TimelinerMigrationPlan.self) {
             ContentView()
         }
         .commands {
             TimelineCommands()
+        }
+    }
+}
+
+class TimelinerAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        removeShareMenu()
+    }
+
+    private func removeShareMenu() {
+        guard let fileMenu = NSApp.mainMenu?.item(withTitle: "File")?.submenu else { return }
+
+        // Remove the Share item and any separator immediately following it.
+        var indexToRemove: Int? = nil
+        for (i, item) in fileMenu.items.enumerated() {
+            if item.submenu?.title == "Share" || item.title == "Share" {
+                indexToRemove = i
+                break
+            }
+        }
+        guard let idx = indexToRemove else { return }
+        fileMenu.removeItem(at: idx)
+
+        // Remove the separator that was directly after the Share item (now at the same index).
+        if idx < fileMenu.items.count, fileMenu.items[idx].isSeparatorItem {
+            fileMenu.removeItem(at: idx)
         }
     }
 }
@@ -32,13 +60,11 @@ struct TimelineCommands: Commands {
                 Button("Export as PDF\u{2026}") {
                     exportPDF = true
                 }
-                .keyboardShortcut("p", modifiers: [.command, .shift])
                 .disabled(exportPDF == nil)
 
                 Button("Export as PNG\u{2026}") {
                     exportPNG = true
                 }
-                .keyboardShortcut("g", modifiers: [.command, .shift])
                 .disabled(exportPNG == nil)
             }
         }
