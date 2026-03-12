@@ -55,7 +55,8 @@ ContentView
 │           ├── LaneRowView[]     # One per lane, dynamic height via overlap layout
 │           │   └── EventView[]   # Point (dot) or span (bar), with system tooltips
 │           ├── .inspector()       # EventInspectorView (trailing panel, ⌘I)
-│           └── Gesture handlers  # Pan and zoom, fit-to-content
+│           ├── Gesture handlers  # Pan and zoom, fit-to-content
+│           └── TimelineExporter  # PDF/PNG export (⇧⌘P / ⇧⌘G)
 ```
 
 ### Coordinate System
