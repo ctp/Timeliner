@@ -24,6 +24,7 @@ struct TimelineCanvasView: View {
     @State private var isDragging = false
     @State private var dragStartCenter: Date?
     @State private var hasAutoFitted = false
+    @State private var zoomStartScale: Double?
 
     init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>) {
         _fitToContent = fitToContent
@@ -40,10 +41,9 @@ struct TimelineCanvasView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                // Time axis (pan and zoom gestures live here)
+                // Time axis (pan gesture lives here)
                 TimeAxisView(viewport: viewportWithWidth(geometry.size.width))
                     .gesture(panGesture(width: geometry.size.width))
-                    .gesture(magnificationGesture)
                     .contentShape(Rectangle())
 
                 Divider()
@@ -88,6 +88,7 @@ struct TimelineCanvasView: View {
                     }
                 }
             }
+            .gesture(magnificationGesture)
             .onHorizontalScroll { deltaX in
                 let deltaSeconds = TimeInterval(-deltaX) * viewport.scale
                 viewport.centerDate = viewport.centerDate.addingTimeInterval(deltaSeconds)
@@ -296,10 +297,16 @@ struct TimelineCanvasView: View {
     private var magnificationGesture: some Gesture {
         MagnificationGesture()
             .onChanged { value in
-                // Zoom: smaller scale = zoomed in, larger scale = zoomed out
-                let factor = 1.0 / value
-                viewport.scale = max(1, viewport.scale * factor)
+                // Anchor the zoom to the scale at gesture start so each frame
+                // applies relative to the original value, not the previous frame.
+                let startScale = zoomStartScale ?? viewport.scale
+                if zoomStartScale == nil { zoomStartScale = viewport.scale }
+                // MagnificationGesture value > 1 means pinch-out (zoom in → smaller scale).
+                viewport.scale = max(1, startScale / value)
                 clampViewport()
+            }
+            .onEnded { _ in
+                zoomStartScale = nil
             }
     }
 
