@@ -75,15 +75,19 @@ Timeliner/
 │   ├── Lane.swift
 │   └── Era.swift
 ├── Views/
-│   ├── TimelineLayoutEngine.swift  # Shared layout types and functions
+│   ├── TimelineLayoutEngine.swift  # Shared layout types, collision layout, label placement, connection lines
+│   ├── TimelineConstants.swift     # Centralized layout constants (row heights, event sizing, etc.)
 │   ├── TimelineViewport.swift
 │   ├── TimelineCanvasView.swift
+│   ├── TimelineExporter.swift      # PDF and PNG export with geometry matching live viewport
 │   ├── TimeAxisView.swift
 │   ├── EventView.swift
 │   ├── LaneRowView.swift
-│   ├── EraBandView.swift          # Background band for era/period date ranges
-│   ├── EventInspectorView.swift  # Read-only trailing inspector with copy-to-clipboard
-│   ├── FlexibleDateEditor.swift  # Reusable progressive date fields
+│   ├── EraBandView.swift           # Background band for era/period date ranges
+│   ├── EventInspectorView.swift    # Read-only trailing inspector with copy-to-clipboard
+│   ├── FlexibleDateEditor.swift    # Reusable progressive date fields
+│   ├── ScrollWheelOverlay.swift    # NSEvent local monitor for precise scroll/pan handling
+│   ├── Color+Hex.swift             # Color↔hex string conversion extension
 │   └── Sidebar/
 │       ├── LaneListView.swift
 │       └── EraListView.swift
@@ -136,20 +140,21 @@ Implemented:
 - ✅ Horizontal timeline visualization
 - ✅ Stacked lane rows with interval-collision layout (spans pack into the first sub-row with no actual overlap; point events always occupy row 0, spans only bump down on real collisions; lanes expand dynamically)
 - ✅ Point events (dots with outline) and span events (bars with outline and tinted lane-color fill)
-- ✅ Git-style connection lines: railroad-track graph with 3pt lane-colored lines, S-curve fork/merge connectors, gradient fade at viewport edges
-- ✅ Pan (drag on time axis, or horizontal trackpad/scroll wheel anywhere) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); scroll input via NSEvent local monitor with hit-test scoping so vertical lane scrolling and inspector scrolling coexist
+- ✅ Git-style connection lines: railroad-track graph with 3pt lane-colored lines, S-curve fork/merge connectors (cubic Bézier), gradient fade at viewport edges; shared `ConnectionLinesShape` in `TimelineLayoutEngine`
+- ✅ Pan (drag on time axis, or horizontal trackpad/scroll wheel anywhere) and zoom (pinch on time axis) navigation with viewport clamping (max 1 year beyond event bounds); scroll input via `ScrollWheelOverlay` (NSEvent local monitor) with hit-test scoping so vertical lane scrolling and inspector scrolling coexist
 - ✅ Fit-to-content viewport scaling (auto-fits on document load via async task, toolbar button, and View menu item with ⌘0)
 - ✅ Adaptive time axis (hours → decades) with refined tick spacing thresholds and calendar-anchored label cadence (labels stay stable during resize/scroll)
 - ✅ Timezone-aware FlexibleDate (UTC storage for time-precision, local display)
 - ✅ Sidebar for lane and era management (CRUD)
 - ✅ System tooltips on events showing title (replaced hover popovers to avoid click interference)
 - ✅ Point event labels: toggled via View > Show Point Labels (⌘L) and toolbar button, with vertical connector lines and tiered stagger layout (up to 4 above tiers, 2 below tiers) to avoid collisions; biased above, lanes expand dynamically; two-pass layout — first assigns tiers via label-to-label collision, then computes horizontal offsets so label text avoids connector lines from higher-tier labels
-- ✅ Sample data generation (idempotent) — 20 events across Work and Personal lanes with overlapping spans and point events
 - ✅ Read-only event inspector: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; displays title, description, lane, start/end dates as non-editable text with text selection; copy-to-clipboard button for structured event summary
 - ✅ Event dragging: drag point or span events to move them in time; drag left/right edges of spans to resize (change start/end date); 6pt edge hit zones for resize detection; dates snap to event's own precision on commit; minimum duration of one precision unit enforced; global coordinate space for jitter-free dragging; GeometryReader-based edge detection for spans
+- ✅ PDF and PNG export: File > Export > Export as PDF (⇧⌘P) or Export as PNG (⇧⌘G); export geometry matches current viewport zoom level; PNG uses @2x rasterization for crisp output; always includes point event labels; light/dark appearance matches current app theme; `TimelineExporter` with self-contained `TimelineExportView` and export-only lane row views (no gesture handlers)
 - ✅ AppleScript support (primary editing interface): full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event`, `make new era` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event/Era) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). **Known limitation:** `save`, `close`, and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
-- ✅ Lane color picker: click a lane in the sidebar to open an editor sheet with name and ColorPicker; new-lane flow also includes a ColorPicker instead of hardcoded blue; `Color.toHex()` extension for Color↔hex conversion; sheet presented on List (not inside List cells) to avoid SwiftUI re-presentation bugs
-- ✅ Eras / Periods: cross-lane date ranges rendered as subtle background bands spanning all lanes; managed via sidebar "Eras" section with CRUD (add, edit name + start/end dates, delete, reorder); `EraBandView` renders with horizontal fade-in/fade-out at edges and centered name label with background pill; fixed `Color.primary.opacity(0.06)` color (works in light/dark mode); sample data includes "Sprint Phase" and "Vacation Season" eras; full AppleScript support (`make new era`, `delete era`, property get/set); schema migration v1.0.0 → v1.1.0
+- ✅ Lane color picker: click a lane in the sidebar to open an editor sheet with name and ColorPicker; new-lane flow also includes a ColorPicker instead of hardcoded blue; `Color+Hex.swift` extension for Color↔hex conversion; sheet presented on List (not inside List cells) to avoid SwiftUI re-presentation bugs
+- ✅ Eras / Periods: cross-lane date ranges rendered as subtle background bands spanning all lanes; managed via sidebar "Eras" section with CRUD (add, edit name + start/end dates, delete, reorder); `EraBandView` renders with horizontal fade-in/fade-out at edges and centered name label with background pill; fixed `Color.primary.opacity(0.06)` color (works in light/dark mode); full AppleScript support (`make new era`, `delete era`, property get/set); schema migration v1.0.0 → v1.1.0
+- ✅ Centralized layout constants in `TimelineConstants.swift` (baseRowHeight, eventHeight, spanCornerRadius, connectionLineWidth, etc.)
 
 ## Future Work (Out of Scope for v1)
 
@@ -162,7 +167,7 @@ These were explicitly deferred but the model accommodates them:
 5. **Minimap** - Overview navigation for large timelines
 6. **Search** - Find events by title/description
 7. ~~**Eras / Periods**~~ - Implemented in v1.1
-8. **Import/Export** - CSV or JSON data interchange for bringing in external data and sharing timelines
+8. ~~**Export**~~ - PDF and PNG export implemented in v1.2; CSV/JSON import/export still deferred
 9. **Keyboard Navigation** - Arrow keys between events, Enter to open inspector, Delete to remove; power-user workflow
 10. **Undo/Redo** - SwiftData + UndoManager integration for model mutations (inspector edits, dragging, creation)
 11. **Multi-Select & Bulk Operations** - Shift/Cmd-click to select multiple events; bulk move, delete, or lane reassignment
