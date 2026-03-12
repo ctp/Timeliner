@@ -19,18 +19,22 @@ struct TimelineCanvasView: View {
     @Binding var showInspector: Bool
     @Binding var canvasWidth: CGFloat
     @Binding var viewport: TimelineViewport
+    @Binding var editingLane: Lane?
+    @Binding var editingEra: Era?
     @State private var selectedEventID: UUID?
     @State private var isDragging = false
     @State private var dragStartCenter: Date?
     @State private var hasAutoFitted = false
     @State private var zoomStartScale: Double?
 
-    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>, viewport: Binding<TimelineViewport>) {
+    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>, viewport: Binding<TimelineViewport>, editingLane: Binding<Lane?>, editingEra: Binding<Era?>) {
         _fitToContent = fitToContent
         _showPointLabels = showPointLabels
         _showInspector = showInspector
         _canvasWidth = canvasWidth
         _viewport = viewport
+        _editingLane = editingLane
+        _editingEra = editingEra
     }
 
     var body: some View {
@@ -68,6 +72,8 @@ struct TimelineCanvasView: View {
                                     selectedEventID: selectedEventID,
                                     onSelectEvent: { event in
                                         selectedEventID = event.id
+                                        editingLane = nil
+                                        editingEra = nil
                                     },
                                     onDragEnd: { event, newStart, newEnd in
                                         applyDrag(event: event, newStart: newStart, newEnd: newEnd)
@@ -120,7 +126,7 @@ struct TimelineCanvasView: View {
         }
         .background(Color(nsColor: .textBackgroundColor))
         .inspector(isPresented: $showInspector) {
-            EventInspectorView(event: selectedEvent)
+            InspectorView(event: selectedEvent, editingLane: $editingLane, editingEra: $editingEra)
                 .inspectorColumnWidth(min: 250, ideal: 300, max: 400)
         }
     }
@@ -192,7 +198,11 @@ struct TimelineCanvasView: View {
                     event: item.event,
                     viewport: vp,
                     isSelected: item.event.id == selectedEventID,
-                    onSelect: { selectedEventID = item.event.id },
+                    onSelect: {
+                        selectedEventID = item.event.id
+                        editingLane = nil
+                        editingEra = nil
+                    },
                     subRow: item.subRow,
                     rowHeight: totalHeight,
                     labelPosition: labelPositions[item.event.id] ?? .none,
@@ -313,7 +323,7 @@ struct TimelineCanvasView: View {
 }
 
 #Preview {
-    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), canvasWidth: .constant(800), viewport: .constant(TimelineViewport()))
+    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), canvasWidth: .constant(800), viewport: .constant(TimelineViewport()), editingLane: .constant(nil), editingEra: .constant(nil))
         .modelContainer(for: [TimelineEvent.self, Lane.self, Era.self], inMemory: true)
         .frame(width: 800, height: 400)
 }

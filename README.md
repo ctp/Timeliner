@@ -14,7 +14,7 @@ Timeliner is a **visualization-first** app. The primary way to create and edit t
 - **Pan and zoom** — Drag or scroll horizontally to pan; pinch to zoom. Fit-to-content with **Cmd+0**
 - **Adaptive time axis** — Tick labels adjust from hours to decades depending on zoom level
 - **Drag to move and resize** — Drag events to reposition them in time; drag the edges of span events to change their start or end date
-- **Event inspector** — View event details (title, description, dates, lane) in a read-only sidebar panel (**Cmd+I**) with copy-to-clipboard support
+- **Inspector panel** — View event details (read-only) or edit lane/era properties inline in a sidebar panel (**Cmd+I**); auto-opens when selecting a lane or era
 - **Point event labels** — Toggle labels on point events with **Cmd+L**; labels auto-stagger to avoid overlaps
 - **Connection lines** — Git-style railroad-track lines connect events within a lane
 - **Export** — Export the timeline as a PDF or PNG via **File > Export** (**Shift+Cmd+P** / **Shift+Cmd+G**)
@@ -26,7 +26,7 @@ Timeliner is a **visualization-first** app. The primary way to create and edit t
 
 Events, lanes, and eras are created and modified via AppleScript. This makes Timeliner well-suited for AI-driven workflows where an assistant (e.g. Claude Code) populates timelines programmatically.
 
-Lanes and eras can also be managed from the sidebar (add, edit, reorder, delete).
+Lanes and eras can be viewed, reordered, and deleted from the sidebar. Click a lane or era to edit its properties in the inspector panel.
 
 ### Navigating
 
@@ -44,7 +44,7 @@ Lanes and eras can also be managed from the sidebar (add, edit, reorder, delete)
 
 ### Organizing
 
-Use the sidebar to create and manage lanes and eras. Click a lane to edit its name and color. Events without a lane appear in an "Unassigned" section at the bottom.
+Use the sidebar to view, reorder, and delete lanes and eras. Click a lane or era to open the inspector panel where you can edit its properties (name, color, dates). Events without a lane appear in an "Unassigned" section at the bottom.
 
 ### Exporting
 

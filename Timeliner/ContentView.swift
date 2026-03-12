@@ -78,19 +78,6 @@ struct ContentView: View {
                 LaneListView(editingLane: $editingLane)
                 EraListView(editingEra: $editingEra)
             }
-            .sheet(item: $editingLane) { lane in
-                LaneEditorSheet(lane: lane, onDone: { name, color in
-                    lane.name = name
-                    lane.color = color
-                })
-            }
-            .sheet(item: $editingEra) { era in
-                EraEditorSheet(era: era, onDone: { name, startDate, endDate in
-                    era.name = name
-                    era.startDate = startDate
-                    era.endDate = endDate
-                })
-            }
             #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
             #endif
@@ -102,7 +89,7 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, canvasWidth: $canvasWidth, viewport: $viewport)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, canvasWidth: $canvasWidth, viewport: $viewport, editingLane: $editingLane, editingEra: $editingEra)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -155,6 +142,12 @@ struct ContentView: View {
                 viewport: viewport,
                 documentTitle: documentTitle
             )
+        }
+        .onChange(of: editingLane) { _, newValue in
+            if newValue != nil { showInspector = true }
+        }
+        .onChange(of: editingEra) { _, newValue in
+            if newValue != nil { showInspector = true }
         }
         .onAppear {
             registerWithScriptingBridge()

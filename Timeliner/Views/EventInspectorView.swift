@@ -6,20 +6,30 @@
 import SwiftUI
 import SwiftData
 
-struct EventInspectorView: View {
+struct InspectorView: View {
     let event: TimelineEvent?
+    @Binding var editingLane: Lane?
+    @Binding var editingEra: Era?
 
     var body: some View {
         Group {
-            if let event {
+            if let lane = editingLane {
+                LaneInspectorView(lane: lane)
+                    .id(lane.id)
+            } else if let era = editingEra {
+                EraInspectorView(era: era)
+                    .id(era.id)
+            } else if let event {
                 EventDetailView(event: event)
                     .id(event.id)
             } else {
-                ContentUnavailableView("No Selection", systemImage: "calendar", description: Text("Select an event to view details"))
+                ContentUnavailableView("No Selection", systemImage: "calendar", description: Text("Select an event, lane, or era to view details"))
             }
         }
     }
 }
+
+// MARK: - Event Detail (read-only)
 
 private struct EventDetailView: View {
     let event: TimelineEvent
@@ -98,5 +108,64 @@ private struct EventDetailView: View {
         let text = lines.joined(separator: "\n")
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+    }
+}
+
+// MARK: - Lane Inspector (editable)
+
+private struct LaneInspectorView: View {
+    @Bindable var lane: Lane
+    @State private var pickerColor: Color
+
+    init(lane: Lane) {
+        self.lane = lane
+        _pickerColor = State(initialValue: Color(hex: lane.color) ?? .blue)
+    }
+
+    var body: some View {
+        Form {
+            Section("Lane") {
+                TextField("Name", text: $lane.name)
+
+                ColorPicker("Color", selection: $pickerColor, supportsOpacity: false)
+                    .onChange(of: pickerColor) { _, newColor in
+                        lane.color = newColor.toHex()
+                    }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Era Inspector (editable)
+
+private struct EraInspectorView: View {
+    @Bindable var era: Era
+    @State private var startDate: FlexibleDate
+    @State private var endDate: FlexibleDate
+
+    init(era: Era) {
+        self.era = era
+        _startDate = State(initialValue: era.startDate)
+        _endDate = State(initialValue: era.endDate)
+    }
+
+    var body: some View {
+        Form {
+            Section("Era") {
+                TextField("Name", text: $era.name)
+            }
+
+            FlexibleDateEditor(label: "Start Date", flexibleDate: $startDate)
+                .onChange(of: startDate) { _, newValue in
+                    era.startDate = newValue
+                }
+
+            FlexibleDateEditor(label: "End Date", flexibleDate: $endDate)
+                .onChange(of: endDate) { _, newValue in
+                    era.endDate = newValue
+                }
+        }
+        .formStyle(.grouped)
     }
 }
