@@ -52,7 +52,9 @@ Use **File > Export > Export as PDF…** (**Shift+Cmd+P**) or **Export as PNG…
 
 ### AppleScript
 
-Timeliner's primary data editing interface is AppleScript. Full CRUD support for documents, lanes, events, and eras:
+Timeliner's primary data editing interface is AppleScript. You aren't expected to write AppleScript yourself — instead, an AI coding agent like Claude Code or Gemini CLI drives the app on your behalf using natural language. You describe what you want ("add a lane called Work with three events in June") and the agent translates that into the appropriate AppleScript commands.
+
+Full CRUD support for documents, lanes, events, and eras:
 
 ```applescript
 tell application "Timeliner"
