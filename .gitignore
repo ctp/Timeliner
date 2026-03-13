@@ -66,6 +66,3 @@ fastlane/test_output
 
 # Git worktrees
 .worktrees/
-
-# SwiftData write-ahead logs
-*-wal
