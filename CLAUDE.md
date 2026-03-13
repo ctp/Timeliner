@@ -172,6 +172,7 @@ These were explicitly deferred but the model accommodates them:
 9. **Keyboard Navigation** - Arrow keys between events, Enter to open inspector, Delete to remove; power-user workflow
 10. **Undo/Redo** - SwiftData + UndoManager integration for model mutations (inspector edits, dragging, creation)
 11. **Multi-Select & Bulk Operations** - Shift/Cmd-click to select multiple events; bulk move, delete, or lane reassignment
+12. **Test Coverage** - TimelineLayoutEngine collision detection, TimelineExporter PDF/PNG generation, gesture handling (drag, resize, pan, zoom), AppleScript commands
 
 ## Design Documents
 
