@@ -9,7 +9,6 @@ import SwiftData
 struct EraListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Era.sortOrder) private var eras: [Era]
-    @Binding var editingEra: Era?
 
     var body: some View {
         Section("Eras") {
@@ -20,19 +19,11 @@ struct EraListView: View {
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    editingEra = era
-                }
-                .listRowBackground(
-                    editingEra?.id == era.id
-                        ? Color.accentColor.opacity(0.15)
-                        : nil
-                )
+                .tag(SidebarSelection.era(era.id))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(era.name)
                 .accessibilityValue(dateRangeSummary(era))
-                .accessibilityHint("Double-tap to edit era")
+                .accessibilityHint("Select to edit era")
                 .accessibilityAddTraits(.isButton)
             }
             .onDelete(perform: deleteEras)
@@ -61,6 +52,6 @@ struct EraListView: View {
 }
 
 #Preview {
-    EraListView(editingEra: .constant(nil))
+    EraListView()
         .modelContainer(for: Era.self, inMemory: true)
 }

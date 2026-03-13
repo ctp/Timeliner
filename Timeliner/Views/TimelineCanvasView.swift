@@ -21,13 +21,14 @@ struct TimelineCanvasView: View {
     @Binding var viewport: TimelineViewport
     @Binding var editingLane: Lane?
     @Binding var editingEra: Era?
+    @Binding var sidebarSelection: SidebarSelection?
     @State private var selectedEventID: UUID?
     @State private var isDragging = false
     @State private var dragStartCenter: Date?
     @State private var hasAutoFitted = false
     @State private var zoomStartScale: Double?
 
-    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>, viewport: Binding<TimelineViewport>, editingLane: Binding<Lane?>, editingEra: Binding<Era?>) {
+    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>, viewport: Binding<TimelineViewport>, editingLane: Binding<Lane?>, editingEra: Binding<Era?>, sidebarSelection: Binding<SidebarSelection?>) {
         _fitToContent = fitToContent
         _showPointLabels = showPointLabels
         _showInspector = showInspector
@@ -35,6 +36,7 @@ struct TimelineCanvasView: View {
         _viewport = viewport
         _editingLane = editingLane
         _editingEra = editingEra
+        _sidebarSelection = sidebarSelection
     }
 
     var body: some View {
@@ -72,8 +74,7 @@ struct TimelineCanvasView: View {
                                     selectedEventID: selectedEventID,
                                     onSelectEvent: { event in
                                         selectedEventID = event.id
-                                        editingLane = nil
-                                        editingEra = nil
+                                        sidebarSelection = nil
                                     },
                                     onDragEnd: { event, newStart, newEnd in
                                         applyDrag(event: event, newStart: newStart, newEnd: newEnd)
@@ -200,8 +201,7 @@ struct TimelineCanvasView: View {
                     isSelected: item.event.id == selectedEventID,
                     onSelect: {
                         selectedEventID = item.event.id
-                        editingLane = nil
-                        editingEra = nil
+                        sidebarSelection = nil
                     },
                     subRow: item.subRow,
                     rowHeight: totalHeight,
@@ -323,7 +323,7 @@ struct TimelineCanvasView: View {
 }
 
 #Preview {
-    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), canvasWidth: .constant(800), viewport: .constant(TimelineViewport()), editingLane: .constant(nil), editingEra: .constant(nil))
+    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), canvasWidth: .constant(800), viewport: .constant(TimelineViewport()), editingLane: .constant(nil), editingEra: .constant(nil), sidebarSelection: .constant(nil))
         .modelContainer(for: [TimelineEvent.self, Lane.self, Era.self], inMemory: true)
         .frame(width: 800, height: 400)
 }

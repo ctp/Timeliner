@@ -53,6 +53,11 @@ extension FocusedValues {
     }
 }
 
+enum SidebarSelection: Hashable {
+    case lane(UUID)
+    case era(UUID)
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.undoManager) private var undoManager
@@ -71,12 +76,13 @@ struct ContentView: View {
     @State private var registryID: UUID?
     @State private var editingLane: Lane?
     @State private var editingEra: Era?
+    @State private var sidebarSelection: SidebarSelection?
 
     var body: some View {
         NavigationSplitView {
-            List {
-                LaneListView(editingLane: $editingLane)
-                EraListView(editingEra: $editingEra)
+            List(selection: $sidebarSelection) {
+                LaneListView()
+                EraListView()
             }
             #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
@@ -89,7 +95,7 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, canvasWidth: $canvasWidth, viewport: $viewport, editingLane: $editingLane, editingEra: $editingEra)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, canvasWidth: $canvasWidth, viewport: $viewport, editingLane: $editingLane, editingEra: $editingEra, sidebarSelection: $sidebarSelection)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -143,11 +149,20 @@ struct ContentView: View {
                 documentTitle: documentTitle
             )
         }
-        .onChange(of: editingLane) { _, newValue in
-            if newValue != nil { showInspector = true }
-        }
-        .onChange(of: editingEra) { _, newValue in
-            if newValue != nil { showInspector = true }
+        .onChange(of: sidebarSelection) { _, newValue in
+            switch newValue {
+            case .lane(let id):
+                editingLane = lanes.first { $0.id == id }
+                editingEra = nil
+                if editingLane != nil { showInspector = true }
+            case .era(let id):
+                editingEra = eras.first { $0.id == id }
+                editingLane = nil
+                if editingEra != nil { showInspector = true }
+            case nil:
+                editingLane = nil
+                editingEra = nil
+            }
         }
         .onAppear {
             registerWithScriptingBridge()

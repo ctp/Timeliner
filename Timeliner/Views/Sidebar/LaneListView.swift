@@ -9,7 +9,6 @@ import SwiftData
 struct LaneListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Lane.sortOrder) private var lanes: [Lane]
-    @Binding var editingLane: Lane?
 
     var body: some View {
         Section("Lanes") {
@@ -21,18 +20,10 @@ struct LaneListView: View {
                         .accessibilityHidden(true)
                     Text(lane.name)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    editingLane = lane
-                }
-                .listRowBackground(
-                    editingLane?.id == lane.id
-                        ? Color.accentColor.opacity(0.15)
-                        : nil
-                )
+                .tag(SidebarSelection.lane(lane.id))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(lane.name)
-                .accessibilityHint("Double-tap to edit lane")
+                .accessibilityHint("Select to edit lane")
                 .accessibilityAddTraits(.isButton)
             }
             .onDelete(perform: deleteLanes)
@@ -57,6 +48,6 @@ struct LaneListView: View {
 }
 
 #Preview {
-    LaneListView(editingLane: .constant(nil))
+    LaneListView()
         .modelContainer(for: Lane.self, inMemory: true)
 }
