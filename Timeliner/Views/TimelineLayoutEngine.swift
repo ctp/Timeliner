@@ -50,9 +50,38 @@ struct ConnectionLines {
     let forkMerges: [ForkMerge]
 }
 
-// MARK: - Constants
+// MARK: - Label Padding
 
-let defaultBaseRowHeight: CGFloat = TimelineConstants.baseRowHeight
+struct LabelPadding {
+    let top: CGFloat
+    let bottom: CGFloat
+}
+
+func computeLabelPadding(positions: [UUID: LabelPosition]) -> LabelPadding {
+    let maxAboveTier = positions.values.filter(\.isAbove).map(\.tier).max()
+    let maxBelowTier = positions.values.filter(\.isBelow).map(\.tier).max()
+    let top: CGFloat = maxAboveTier != nil
+        ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxAboveTier! + 1)
+        : 0
+    let bottom: CGFloat = maxBelowTier != nil
+        ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxBelowTier! + 1)
+        : 0
+    return LabelPadding(top: top, bottom: bottom)
+}
+
+func computeLaneRowHeight(
+    events: [TimelineEvent],
+    viewport: TimelineViewport,
+    showPointLabels: Bool
+) -> CGFloat {
+    let layout = layoutEvents(events, viewport: viewport)
+    let positions = showPointLabels
+        ? computeLabelPositions(layout: layout, viewport: viewport).positions
+        : [:]
+    let padding = computeLabelPadding(positions: positions)
+    let contentHeight = TimelineConstants.baseRowHeight * CGFloat(max(layout.totalRows, 1))
+    return padding.top + contentHeight + padding.bottom
+}
 
 // MARK: - Layout Functions
 
