@@ -84,7 +84,19 @@ struct TimelineCanvasView: View {
 
                             // Unassigned events lane
                             if !eventsWithoutLane.isEmpty {
-                                unassignedLaneView(width: geometry.size.width)
+                                UnassignedLaneRowView(
+                                    events: eventsWithoutLane,
+                                    viewport: viewportWithWidth(geometry.size.width),
+                                    showPointLabels: showPointLabels,
+                                    selectedEventID: selectedEventID,
+                                    onSelectEvent: { event in
+                                        selectedEventID = event.id
+                                        sidebarSelection = nil
+                                    },
+                                    onDragEnd: { event, newStart, newEnd in
+                                        applyDrag(event: event, newStart: newStart, newEnd: newEnd)
+                                    }
+                                )
                             }
                         }
                     }
@@ -145,78 +157,6 @@ struct TimelineCanvasView: View {
 
     private var eventsWithoutLane: [TimelineEvent] {
         unassignedEvents.filter { $0.lane == nil }
-    }
-
-    private func unassignedLaneView(width: CGFloat) -> some View {
-        let vp = viewportWithWidth(width)
-        let layout = layoutEvents(eventsWithoutLane, viewport: vp)
-        let baseRowHeight: CGFloat = TimelineConstants.baseRowHeight
-        let labelResult = showPointLabels ? computeLabelPositions(layout: layout, viewport: vp) : (positions: [:], offsets: [:])
-        let labelPositions = labelResult.positions
-        let labelOffsets = labelResult.offsets
-        let maxAboveTier = labelPositions.values.filter(\.isAbove).map(\.tier).max()
-        let maxBelowTier = labelPositions.values.filter(\.isBelow).map(\.tier).max()
-        let topPadding: CGFloat = maxAboveTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxAboveTier! + 1)
-            : 0
-        let bottomPadding: CGFloat = maxBelowTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxBelowTier! + 1)
-            : 0
-        let laneContentHeight = baseRowHeight * CGFloat(max(layout.totalRows, 1))
-        let totalHeight = topPadding + laneContentHeight + bottomPadding
-        let lines = computeConnectionLines(layout: layout.layout, viewport: vp, baseRowHeight: baseRowHeight, yOffset: topPadding)
-
-        return ZStack(alignment: .leading) {
-            Rectangle()
-                .fill(Color.gray.opacity(0.05))
-
-            // Connection lines
-            ConnectionLinesShape(lines: lines)
-                .stroke(Color.gray, lineWidth: TimelineConstants.connectionLineWidth)
-                .mask(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: .black, location: 0.15),
-                            .init(color: .black, location: 0.85),
-                            .init(color: .clear, location: 1),
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-
-            Text("Unassigned")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.leading, 8)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 4)
-                .accessibilityHidden(true)
-
-            ForEach(layout.layout, id: \.event.id) { item in
-                EventView(
-                    event: item.event,
-                    viewport: vp,
-                    isSelected: item.event.id == selectedEventID,
-                    onSelect: {
-                        selectedEventID = item.event.id
-                        sidebarSelection = nil
-                    },
-                    subRow: item.subRow,
-                    rowHeight: totalHeight,
-                    labelPosition: labelPositions[item.event.id] ?? .none,
-                    labelXOffset: labelOffsets[item.event.id] ?? 0,
-                    yOffset: topPadding,
-                    onDragEnd: { event, newStart, newEnd in
-                        applyDrag(event: event, newStart: newStart, newEnd: newEnd)
-                    }
-                )
-            }
-        }
-        .frame(height: totalHeight)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Lane: Unassigned")
     }
 
     /// Returns the earliest start and latest end across all events, or nil if empty.
