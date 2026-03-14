@@ -196,14 +196,14 @@ enum TimelineExporter {
         var lanesHeight: CGFloat = 0
         for lane in lanes {
             let laneEventsForLane = laneEvents.filter { $0.lane?.id == lane.id }
-            lanesHeight += laneRowHeight(
+            lanesHeight += computeLaneRowHeight(
                 events: laneEventsForLane,
                 viewport: exportViewport,
                 showPointLabels: showPointLabels
             )
         }
         if !unassigned.isEmpty {
-            lanesHeight += laneRowHeight(
+            lanesHeight += computeLaneRowHeight(
                 events: unassigned,
                 viewport: exportViewport,
                 showPointLabels: showPointLabels
@@ -219,27 +219,6 @@ enum TimelineExporter {
         return (exportWidth, totalHeight, exportViewport)
     }
 
-    /// Compute the rendered height for one lane's events, mirroring LaneRowView's logic.
-    private static func laneRowHeight(
-        events: [TimelineEvent],
-        viewport: TimelineViewport,
-        showPointLabels: Bool
-    ) -> CGFloat {
-        let layout = layoutEvents(events, viewport: viewport)
-        let labelResult = showPointLabels
-            ? computeLabelPositions(layout: layout, viewport: viewport)
-            : (positions: [:], offsets: [:])
-        let maxAboveTier = labelResult.positions.values.filter(\.isAbove).map(\.tier).max()
-        let maxBelowTier = labelResult.positions.values.filter(\.isBelow).map(\.tier).max()
-        let topPadding: CGFloat = maxAboveTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxAboveTier! + 1)
-            : 0
-        let bottomPadding: CGFloat = maxBelowTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxBelowTier! + 1)
-            : 0
-        let contentHeight = TimelineConstants.baseRowHeight * CGFloat(max(layout.totalRows, 1))
-        return topPadding + contentHeight + bottomPadding
-    }
 }
 
 // MARK: - Export View
@@ -281,7 +260,7 @@ private struct TimelineExportView: View {
                 // Lane rows
                 VStack(spacing: 1) {
                     ForEach(lanes, id: \.id) { lane in
-                        ExportLaneRowView(
+                        LaneRowView(
                             lane: lane,
                             viewport: viewport,
                             showPointLabels: showPointLabels
@@ -291,7 +270,7 @@ private struct TimelineExportView: View {
                     // Unassigned events
                     let unassigned = events.filter { $0.lane == nil }
                     if !unassigned.isEmpty {
-                        ExportUnassignedRowView(
+                        UnassignedLaneRowView(
                             events: unassigned,
                             viewport: viewport,
                             showPointLabels: showPointLabels
@@ -308,171 +287,3 @@ private struct TimelineExportView: View {
     }
 }
 
-// MARK: - Export Lane Row
-
-/// A rendering-only variant of LaneRowView with no gesture handlers.
-private struct ExportLaneRowView: View {
-    let lane: Lane
-    let viewport: TimelineViewport
-    let showPointLabels: Bool
-
-    private var eventLayout: (layout: [(event: TimelineEvent, subRow: Int)], totalRows: Int) {
-        layoutEvents(lane.events, viewport: viewport)
-    }
-
-    var body: some View {
-        let layout = eventLayout
-        let labelResult = showPointLabels
-            ? computeLabelPositions(layout: layout, viewport: viewport)
-            : (positions: [:], offsets: [:])
-        let labelPositions = labelResult.positions
-        let labelOffsets = labelResult.offsets
-        let maxAboveTier = labelPositions.values.filter(\.isAbove).map(\.tier).max()
-        let maxBelowTier = labelPositions.values.filter(\.isBelow).map(\.tier).max()
-        let topPadding: CGFloat = maxAboveTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxAboveTier! + 1)
-            : 0
-        let bottomPadding: CGFloat = maxBelowTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxBelowTier! + 1)
-            : 0
-        let contentHeight = TimelineConstants.baseRowHeight * CGFloat(max(layout.totalRows, 1))
-        let totalHeight = topPadding + contentHeight + bottomPadding
-        let lines = computeConnectionLines(
-            layout: layout.layout,
-            viewport: viewport,
-            baseRowHeight: TimelineConstants.baseRowHeight,
-            yOffset: topPadding
-        )
-
-        ZStack(alignment: .leading) {
-            // Background
-            Rectangle()
-                .fill(laneBackgroundColor)
-
-            // Connection lines
-            ConnectionLinesShape(lines: lines)
-                .stroke(laneStrokeColor, lineWidth: TimelineConstants.connectionLineWidth)
-                .mask(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: .black, location: 0.15),
-                            .init(color: .black, location: 0.85),
-                            .init(color: .clear, location: 1),
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-
-            // Lane name label
-            Text(lane.name)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.leading, 8)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 4)
-
-            // Events (no selection, no interaction)
-            ForEach(layout.layout, id: \.event.id) { item in
-                EventView(
-                    event: item.event,
-                    viewport: viewport,
-                    isSelected: false,
-                    onSelect: {},
-                    subRow: item.subRow,
-                    rowHeight: totalHeight,
-                    labelPosition: labelPositions[item.event.id] ?? .none,
-                    labelXOffset: labelOffsets[item.event.id] ?? 0,
-                    yOffset: topPadding
-                )
-            }
-        }
-        .frame(height: totalHeight)
-        .clipped()
-    }
-
-    private var laneStrokeColor: Color {
-        Color(hex: lane.color) ?? .gray
-    }
-
-    private var laneBackgroundColor: Color {
-        (Color(hex: lane.color) ?? .gray).opacity(0.1)
-    }
-}
-
-// MARK: - Export Unassigned Row
-
-private struct ExportUnassignedRowView: View {
-    let events: [TimelineEvent]
-    let viewport: TimelineViewport
-    let showPointLabels: Bool
-
-    var body: some View {
-        let layout = layoutEvents(events, viewport: viewport)
-        let labelResult = showPointLabels
-            ? computeLabelPositions(layout: layout, viewport: viewport)
-            : (positions: [:], offsets: [:])
-        let labelPositions = labelResult.positions
-        let labelOffsets = labelResult.offsets
-        let maxAboveTier = labelPositions.values.filter(\.isAbove).map(\.tier).max()
-        let maxBelowTier = labelPositions.values.filter(\.isBelow).map(\.tier).max()
-        let topPadding: CGFloat = maxAboveTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxAboveTier! + 1)
-            : 0
-        let bottomPadding: CGFloat = maxBelowTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxBelowTier! + 1)
-            : 0
-        let contentHeight = TimelineConstants.baseRowHeight * CGFloat(max(layout.totalRows, 1))
-        let totalHeight = topPadding + contentHeight + bottomPadding
-        let lines = computeConnectionLines(
-            layout: layout.layout,
-            viewport: viewport,
-            baseRowHeight: TimelineConstants.baseRowHeight,
-            yOffset: topPadding
-        )
-
-        return ZStack(alignment: .leading) {
-            Rectangle()
-                .fill(Color.gray.opacity(0.05))
-
-            ConnectionLinesShape(lines: lines)
-                .stroke(Color.gray, lineWidth: TimelineConstants.connectionLineWidth)
-                .mask(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: .black, location: 0.15),
-                            .init(color: .black, location: 0.85),
-                            .init(color: .clear, location: 1),
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-
-            Text("Unassigned")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.leading, 8)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 4)
-
-            ForEach(layout.layout, id: \.event.id) { item in
-                EventView(
-                    event: item.event,
-                    viewport: viewport,
-                    isSelected: false,
-                    onSelect: {},
-                    subRow: item.subRow,
-                    rowHeight: totalHeight,
-                    labelPosition: labelPositions[item.event.id] ?? .none,
-                    labelXOffset: labelOffsets[item.event.id] ?? 0,
-                    yOffset: topPadding
-                )
-            }
-        }
-        .frame(height: totalHeight)
-        .clipped()
-    }
-}
