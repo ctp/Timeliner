@@ -10,9 +10,9 @@ struct LaneRowView: View {
     let lane: Lane
     let viewport: TimelineViewport
     let showPointLabels: Bool
-    let selectedEventID: UUID?
-    let onSelectEvent: (TimelineEvent) -> Void
-    var onDragEnd: ((TimelineEvent, FlexibleDate, FlexibleDate?) -> Void)?
+    var selectedEventID: UUID? = nil
+    var onSelectEvent: ((TimelineEvent) -> Void)? = nil
+    var onDragEnd: ((TimelineEvent, FlexibleDate, FlexibleDate?) -> Void)? = nil
 
     private let baseRowHeight: CGFloat = TimelineConstants.baseRowHeight
 
@@ -25,17 +25,10 @@ struct LaneRowView: View {
         let labelResult = showPointLabels ? computeLabelPositions(layout: layout, viewport: viewport) : (positions: [:], offsets: [:])
         let labelPositions = labelResult.positions
         let labelOffsets = labelResult.offsets
-        let maxAboveTier = labelPositions.values.filter(\.isAbove).map(\.tier).max()
-        let maxBelowTier = labelPositions.values.filter(\.isBelow).map(\.tier).max()
-        let topPadding: CGFloat = maxAboveTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxAboveTier! + 1)
-            : 0
-        let bottomPadding: CGFloat = maxBelowTier != nil
-            ? LabelPosition.connectorBase + LabelPosition.tierHeight * CGFloat(maxBelowTier! + 1)
-            : 0
+        let padding = computeLabelPadding(positions: labelPositions)
         let laneContentHeight = baseRowHeight * CGFloat(max(layout.totalRows, 1))
-        let totalHeight = topPadding + laneContentHeight + bottomPadding
-        let lines = computeConnectionLines(layout: layout.layout, viewport: viewport, baseRowHeight: baseRowHeight, yOffset: topPadding)
+        let totalHeight = padding.top + laneContentHeight + padding.bottom
+        let lines = computeConnectionLines(layout: layout.layout, viewport: viewport, baseRowHeight: baseRowHeight, yOffset: padding.top)
 
         ZStack(alignment: .leading) {
             // Background
@@ -75,12 +68,12 @@ struct LaneRowView: View {
                     event: item.event,
                     viewport: viewport,
                     isSelected: item.event.id == selectedEventID,
-                    onSelect: { onSelectEvent(item.event) },
+                    onSelect: { onSelectEvent?(item.event) },
                     subRow: item.subRow,
                     rowHeight: totalHeight,
                     labelPosition: labelPositions[item.event.id] ?? .none,
                     labelXOffset: labelOffsets[item.event.id] ?? 0,
-                    yOffset: topPadding,
+                    yOffset: padding.top,
                     onDragEnd: onDragEnd
                 )
             }
@@ -112,9 +105,7 @@ struct LaneRowView: View {
     return LaneRowView(
         lane: lane,
         viewport: TimelineViewport(),
-        showPointLabels: false,
-        selectedEventID: nil,
-        onSelectEvent: { _ in }
+        showPointLabels: false
     )
     .frame(width: 600)
 }
