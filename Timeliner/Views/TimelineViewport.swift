@@ -96,19 +96,3 @@ func flexibleDate(from date: Date, precision: DatePrecision) -> FlexibleDate {
         )
     }
 }
-
-/// Generate an auto-title for an event at the given date and precision.
-func titleForDate(_ date: Date, precision: DatePrecision) -> String {
-    let formatter = DateFormatter()
-    switch precision {
-    case .year:
-        formatter.dateFormat = "yyyy"
-    case .month:
-        formatter.dateFormat = "MMM yyyy"
-    case .day:
-        formatter.dateFormat = "MMM d, yyyy"
-    case .time:
-        formatter.dateFormat = "MMM d, h:mm a"
-    }
-    return formatter.string(from: date)
-}
