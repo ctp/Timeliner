@@ -48,6 +48,11 @@ class ScriptableDocument: NSObject {
         _fileURL
     }
 
+    @objc var showTodayLine: Bool {
+        get { DocumentRegistry.shared.showTodayLine(for: registryID) }
+        set { DocumentRegistry.shared.setShowTodayLine(newValue, for: registryID) }
+    }
+
     // MARK: - Lane Elements
 
     @objc var lanes: [ScriptableLane] {
@@ -127,6 +132,57 @@ class ScriptableDocument: NSObject {
 
     @objc func removeFromEras(_ wrapper: ScriptableEra) {
         modelContext.delete(wrapper.era)
+    }
+
+    // MARK: - Save Command Handler
+
+    /// Handles `save [document]` AppleScript commands routed to this document.
+    ///
+    /// When a script says `save document 1`, Cocoa Scripting resolves the direct
+    /// parameter to a ScriptableDocument and dispatches the `aevtsave` event here
+    /// rather than through TimelinerSaveCommand. We bridge to the real NSDocument
+    /// so the save actually persists.
+    @objc func handleSaveScriptCommand(_ command: NSScriptCommand) -> Any? {
+        guard let nsDoc = DocumentRegistry.shared.nsDocument(for: registryID) else {
+            command.scriptErrorNumber = errOSAScriptError
+            command.scriptErrorString = "Could not locate the underlying document for '\(name)'."
+            return nil
+        }
+
+        // If a "save in" file path was supplied, do a Save As.
+        if let fileArg = command.evaluatedArguments?["File"] {
+            let targetURL: URL?
+            if let url = fileArg as? URL {
+                targetURL = url
+            } else if let path = fileArg as? String {
+                targetURL = URL(fileURLWithPath: path)
+            } else {
+                targetURL = nil
+            }
+            if let url = targetURL {
+                saveAs(nsDoc: nsDoc, to: url)
+                return nil
+            }
+        }
+
+        nsDoc.save(withDelegate: nil, didSave: nil, contextInfo: nil)
+        return nil
+    }
+
+    /// Performs a Save As to `url`, then updates NSDocument.fileURL and the
+    /// DocumentRegistry so the document stays connected after the operation.
+    private func saveAs(nsDoc: NSDocument, to url: URL) {
+        // Capture the registry ID so the callback can update it off self.
+        let capturedID = registryID
+        let fileType = nsDoc.fileType ?? "com.timeliner.document"
+
+        // Use an Objective-C trampoline object as the delegate so we can receive
+        // the didSave selector without marking ScriptableDocument @objc(NSDocument…).
+        let handler = SaveAsCompletionHandler(registryID: capturedID, targetURL: url)
+        nsDoc.save(to: url, ofType: fileType, for: .saveAsOperation,
+                   delegate: handler,
+                   didSave: #selector(SaveAsCompletionHandler.document(_:didSave:contextInfo:)),
+                   contextInfo: nil)
     }
 
     // MARK: - Object Specifier

@@ -24,6 +24,17 @@
             </parameter>
         </command>
 
+        <command name="save" code="aevtsave" description="Save a document.">
+            <cocoa class="TimelinerSaveCommand"/>
+            <direct-parameter description="The document to save." type="specifier" optional="yes"/>
+            <parameter name="in" code="kfil" description="The file in which to save the document." type="file" optional="yes">
+                <cocoa key="File"/>
+            </parameter>
+            <parameter name="as" code="fltp" description="The file format to use." type="saveable file format" optional="yes">
+                <cocoa key="FileType"/>
+            </parameter>
+        </command>
+
         <command name="count" code="corecnte" description="Return the number of elements of a particular class within an object.">
             <cocoa class="NSCountCommand"/>
             <direct-parameter description="The objects to be counted." type="specifier"/>
@@ -147,6 +158,9 @@
     <suite name="Timeliner Suite" code="Tmlr" description="Timeliner-specific classes and commands.">
 
         <class-extension extends="document" description="Timeliner document properties.">
+            <property name="show today line" code="TdyL" description="Whether the today indicator line is visible on the timeline canvas." type="boolean" access="rw">
+                <cocoa key="showTodayLine"/>
+            </property>
             <element type="lane" access="rw">
                 <cocoa key="lanes"/>
             </element>
@@ -156,6 +170,9 @@
             <element type="era" access="rw">
                 <cocoa key="eras"/>
             </element>
+            <responds-to command="save">
+                <cocoa method="handleSaveScriptCommand:"/>
+            </responds-to>
         </class-extension>
 
         <class name="lane" code="Lane" plural="lanes" description="A horizontal track that groups events visually.">

@@ -51,8 +51,9 @@ struct TimelineCommands: Commands {
     @FocusedBinding(\.fitToContent) private var fitToContent
     @FocusedBinding(\.showPointLabels) private var showPointLabels
     @FocusedBinding(\.showInspector) private var showInspector
-@FocusedBinding(\.exportPDF) private var exportPDF
+    @FocusedBinding(\.exportPDF) private var exportPDF
     @FocusedBinding(\.exportPNG) private var exportPNG
+    @FocusedBinding(\.showTodayLine) private var showTodayLine
 
     var body: some Commands {
         CommandGroup(after: .saveItem) {
@@ -89,6 +90,13 @@ CommandGroup(after: .toolbar) {
             ))
             .keyboardShortcut("i", modifiers: .command)
             .disabled(showInspector == nil)
+
+            Toggle("Show Today Line", isOn: Binding(
+                get: { showTodayLine ?? true },
+                set: { showTodayLine = $0 }
+            ))
+            .keyboardShortcut("t", modifiers: [.command, .shift])
+            .disabled(showTodayLine == nil)
         }
     }
 }

@@ -17,6 +17,7 @@ struct TimelineCanvasView: View {
     @Binding var fitToContent: Bool
     @Binding var showPointLabels: Bool
     @Binding var showInspector: Bool
+    @Binding var showTodayLine: Bool
     @Binding var canvasWidth: CGFloat
     @Binding var viewport: TimelineViewport
     @Binding var editingLane: Lane?
@@ -28,10 +29,11 @@ struct TimelineCanvasView: View {
     @State private var hasAutoFitted = false
     @State private var zoomStartScale: Double?
 
-    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, canvasWidth: Binding<CGFloat>, viewport: Binding<TimelineViewport>, editingLane: Binding<Lane?>, editingEra: Binding<Era?>, sidebarSelection: Binding<SidebarSelection?>) {
+    init(fitToContent: Binding<Bool>, showPointLabels: Binding<Bool>, showInspector: Binding<Bool>, showTodayLine: Binding<Bool>, canvasWidth: Binding<CGFloat>, viewport: Binding<TimelineViewport>, editingLane: Binding<Lane?>, editingEra: Binding<Era?>, sidebarSelection: Binding<SidebarSelection?>) {
         _fitToContent = fitToContent
         _showPointLabels = showPointLabels
         _showInspector = showInspector
+        _showTodayLine = showTodayLine
         _canvasWidth = canvasWidth
         _viewport = viewport
         _editingLane = editingLane
@@ -62,6 +64,19 @@ struct TimelineCanvasView: View {
                                     totalHeight: scrollGeo.size.height
                                 )
                                 .accessibilityHidden(true)
+                            }
+
+                            // Today line — vertical accent-colored line at the current date
+                            if showTodayLine {
+                                let todayX = viewportWithWidth(geometry.size.width).xPosition(for: Date())
+                                if todayX >= 0 && todayX <= geometry.size.width {
+                                    Rectangle()
+                                        .fill(Color.accentColor.opacity(0.7))
+                                        .frame(width: 1.5, height: scrollGeo.size.height)
+                                        .position(x: todayX, y: scrollGeo.size.height / 2)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                }
                             }
                         }
 
@@ -263,7 +278,7 @@ struct TimelineCanvasView: View {
 }
 
 #Preview {
-    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), canvasWidth: .constant(800), viewport: .constant(TimelineViewport()), editingLane: .constant(nil), editingEra: .constant(nil), sidebarSelection: .constant(nil))
+    TimelineCanvasView(fitToContent: .constant(false), showPointLabels: .constant(false), showInspector: .constant(false), showTodayLine: .constant(true), canvasWidth: .constant(800), viewport: .constant(TimelineViewport()), editingLane: .constant(nil), editingEra: .constant(nil), sidebarSelection: .constant(nil))
         .modelContainer(for: [TimelineEvent.self, Lane.self, Era.self], inMemory: true)
         .frame(width: 800, height: 400)
 }

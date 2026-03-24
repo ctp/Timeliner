@@ -24,6 +24,8 @@ final class DocumentRegistry {
         let modelContext: ModelContext
         /// File URL of the .timeliner package, nil for untitled documents.
         var fileURL: URL?
+        /// Whether the today line is visible for this document.
+        var showTodayLine: Bool = true
     }
 
     /// Ordered list of entries preserving insertion order.
@@ -110,6 +112,33 @@ final class DocumentRegistry {
 
     /// Number of registered documents.
     var count: Int { orderedEntries.count }
+
+    /// Update the file URL stored for a registry entry.
+    /// Call this after a Save As operation so the registry stays in sync.
+    func updateFileURL(_ url: URL, for registryID: UUID) {
+        guard let index = orderedEntries.firstIndex(where: { $0.id == registryID }) else { return }
+        let existing = orderedEntries[index]
+        orderedEntries[index] = Entry(id: existing.id, modelContext: existing.modelContext,
+                                     fileURL: url, showTodayLine: existing.showTodayLine)
+    }
+
+    /// Read the showTodayLine flag for a registry entry.
+    func showTodayLine(for registryID: UUID) -> Bool {
+        orderedEntries.first(where: { $0.id == registryID })?.showTodayLine ?? true
+    }
+
+    /// Update the showTodayLine flag for a registry entry.
+    func setShowTodayLine(_ value: Bool, for registryID: UUID) {
+        guard let index = orderedEntries.firstIndex(where: { $0.id == registryID }) else { return }
+        orderedEntries[index].showTodayLine = value
+        NotificationCenter.default.post(
+            name: Self.showTodayLineChangedNotification,
+            object: registryID
+        )
+    }
+
+    /// Posted when showTodayLine changes for a document. The notification object is the entry's id.
+    static let showTodayLineChangedNotification = Notification.Name("DocumentRegistryShowTodayLineChanged")
 
     /// Find the NSDocument for a given registry entry ID.
     func nsDocument(for registryID: UUID) -> NSDocument? {

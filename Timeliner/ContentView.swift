@@ -26,6 +26,10 @@ struct ExportPNGKey: FocusedValueKey {
     typealias Value = Binding<Bool>
 }
 
+struct ShowTodayLineKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
 extension FocusedValues {
     var fitToContent: Binding<Bool>? {
         get { self[FitToContentKey.self] }
@@ -51,6 +55,11 @@ extension FocusedValues {
         get { self[ExportPNGKey.self] }
         set { self[ExportPNGKey.self] = newValue }
     }
+
+    var showTodayLine: Binding<Bool>? {
+        get { self[ShowTodayLineKey.self] }
+        set { self[ShowTodayLineKey.self] = newValue }
+    }
 }
 
 enum SidebarSelection: Hashable {
@@ -71,6 +80,7 @@ struct ContentView: View {
     @State private var showInspector = false
     @State private var exportPDF = false
     @State private var exportPNG = false
+    @State private var showTodayLine = true
     @State private var canvasWidth: CGFloat = 800
     @State private var viewport = TimelineViewport(centerDate: Date(), scale: 86400 * 30, viewportWidth: 800)
     @State private var registryID: UUID?
@@ -95,7 +105,7 @@ struct ContentView: View {
                 }
             }
         } detail: {
-            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, canvasWidth: $canvasWidth, viewport: $viewport, editingLane: $editingLane, editingEra: $editingEra, sidebarSelection: $sidebarSelection)
+            TimelineCanvasView(fitToContent: $fitToContent, showPointLabels: $showPointLabels, showInspector: $showInspector, showTodayLine: $showTodayLine, canvasWidth: $canvasWidth, viewport: $viewport, editingLane: $editingLane, editingEra: $editingEra, sidebarSelection: $sidebarSelection)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -119,6 +129,7 @@ struct ContentView: View {
         .focusedSceneValue(\.showInspector, $showInspector)
         .focusedSceneValue(\.exportPDF, $exportPDF)
         .focusedSceneValue(\.exportPNG, $exportPNG)
+        .focusedSceneValue(\.showTodayLine, $showTodayLine)
         .onChange(of: exportPDF) { _, triggered in
             guard triggered else { return }
             exportPDF = false
@@ -172,6 +183,10 @@ struct ContentView: View {
                 DocumentRegistry.shared.unregister(id: id)
                 registryID = nil
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: DocumentRegistry.showTodayLineChangedNotification)) { note in
+            guard let changedID = note.object as? UUID, changedID == registryID else { return }
+            showTodayLine = DocumentRegistry.shared.showTodayLine(for: changedID)
         }
     }
 
