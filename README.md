@@ -17,8 +17,9 @@ Timeliner is a **visualization-first** app. The primary way to create and edit t
 - **Inspector panel** — View event details (read-only) or edit lane/era properties inline in a sidebar panel (**Cmd+I**); auto-opens when selecting a lane or era
 - **Point event labels** — Toggle labels on point events with **Cmd+L**; labels auto-stagger to avoid overlaps
 - **Connection lines** — Git-style railroad-track lines connect events within a lane
+- **Today line** — A vertical accent-colored line marks the current date on the timeline (toggle via **View > Show Today Line**)
 - **Export** — Export the timeline as a PDF or PNG via **File > Export** (**Shift+Cmd+P** / **Shift+Cmd+G**)
-- **AppleScript** — Full automation support for creating, querying, and modifying events, lanes, and eras
+- **AppleScript** — Full automation support for creating, querying, saving, and modifying events, lanes, and eras
 
 ## Usage
 
@@ -73,7 +74,7 @@ tell application "Timeliner"
 end tell
 ```
 
-Supported operations: `make`, `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment.
+Supported operations: `make`, `delete`, `save`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment.
 
 ## Building
 

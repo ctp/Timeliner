@@ -87,6 +87,7 @@ Timeliner/
 │   ├── EraBandView.swift           # Background band for era/period date ranges
 │   ├── EventInspectorView.swift    # Inspector panel: read-only event detail, editable lane/era properties
 │   ├── FlexibleDateEditor.swift    # Reusable progressive date fields
+│   ├── UnassignedLaneRowView.swift  # Dedicated row view for events without a lane
 │   ├── ScrollWheelOverlay.swift    # NSEvent local monitor for precise scroll/pan handling
 │   ├── Color+Hex.swift             # Color↔hex string conversion extension
 │   └── Sidebar/
@@ -101,6 +102,8 @@ Timeliner/
 │   ├── ScriptableEra.swift         # NSObject wrapper for Era scripting
 │   ├── CreateDocumentCommand.swift # Custom NSCreateCommand for make/lane/event creation
 │   ├── TimelinerDeleteCommand.swift # Custom delete handler
+│   ├── TimelinerSaveCommand.swift  # Custom save/save-as handler bridging to NSDocument
+│   ├── SaveAsCompletionHandler.swift # Completion handler for save-as with DocumentRegistry update
 │   └── NSApplication+Scripting.swift  # KVC entry point for scriptableDocuments
 ├── ContentView.swift
 ├── TimelinerApp.swift
@@ -122,7 +125,7 @@ xcodebuild test -scheme Timeliner -destination 'platform=macOS' -only-testing:Ti
 ## Build Commands
 
 ```bash
-cd /Users/ctp/Desktop/Local\ Sources/Timeliner
+cd /Users/ctp/Desktop/Sources/Timeliner
 
 # Build
 xcodebuild build -scheme Timeliner -destination 'platform=macOS'
@@ -152,9 +155,10 @@ Implemented:
 - ✅ Inspector panel: trailing `.inspector()` panel toggled via toolbar button (info.circle) or ⌘I; shows read-only event details (title, description, lane, dates, copy-to-clipboard) when an event is selected, or editable lane properties (name, color) / era properties (name, start/end dates) when a lane or era is selected from the sidebar; auto-opens on lane/era selection
 - ✅ Event dragging: drag point or span events to move them in time; drag left/right edges of spans to resize (change start/end date); 6pt edge hit zones for resize detection; dates snap to event's own precision on commit; minimum duration of one precision unit enforced; global coordinate space for jitter-free dragging; GeometryReader-based edge detection for spans
 - ✅ PDF and PNG export: File > Export > Export as PDF (⇧⌘P) or Export as PNG (⇧⌘G); export geometry matches current viewport zoom level; PNG uses @2x rasterization for crisp output; always includes point event labels; light/dark appearance matches current app theme; `TimelineExporter` with self-contained `TimelineExportView` and export-only lane row views (no gesture handlers)
-- ✅ AppleScript support (primary editing interface): full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event`, `make new era` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event/Era) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). **Known limitation:** `save`, `close`, and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
+- ✅ AppleScript support (primary editing interface): full CRUD via `osascript` — `make new document`, `make new lane`, `make new timeline event`, `make new era` (all return usable object specifiers for variable storage), `delete`, `count`, `exists`, property get/set, `whose` clause filtering, lane assignment and reassignment, date string comparison. SDEF scripting dictionary, DocumentRegistry bridging SwiftUI DocumentGroup to Cocoa Scripting, NSObject wrappers (ScriptableDocument/Lane/Event/Era) with KVC properties, custom TimelinerCreateCommand handling all object creation, TimelinerDeleteCommand for deletion, FlexibleDate ISO string parsing (`init?(isoString:)` / `.isoString`). Custom `TimelinerSaveCommand` bridges `save` and `save in` (save-as) to the underlying NSDocument via DocumentRegistry. **Known limitation:** `close` and `open` commands do not work via script due to SwiftUI DocumentGroup dispatching these commands to ScriptableDocument wrappers rather than the underlying NSDocument; the app auto-saves so this is not critical for automation workflows.
 - ✅ Lane color picker: `Color+Hex.swift` extension for Color↔hex conversion; lane color editing via inspector panel
 - ✅ Eras / Periods: cross-lane date ranges rendered as subtle background bands spanning all lanes; `EraBandView` renders with horizontal fade-in/fade-out at edges and centered name label with background pill; fixed `Color.primary.opacity(0.06)` color (works in light/dark mode); full AppleScript support (`make new era`, `delete era`, property get/set); schema migration v1.0.0 → v1.1.0
+- ✅ Today line: vertical accent-colored line marking the current date, toggled via View > Show Today Line; visible when the current date is within the viewport
 - ✅ Centralized layout constants in `TimelineConstants.swift` (baseRowHeight, eventHeight, spanCornerRadius, connectionLineWidth, etc.)
 
 ## Future Work (Out of Scope for v1)
@@ -187,6 +191,8 @@ These were explicitly deferred but the model accommodates them:
 - `docs/plans/2026-02-13-applescript-support-design.md` - Design for AppleScript automation support
 - `docs/plans/2026-03-10-ai-driven-ui-design.md` - Design for AI-driven UI model (visualization-first)
 - `docs/plans/2026-03-10-ai-driven-ui-implementation.md` - Implementation plan for AI-driven UI
+- `docs/plans/2026-03-13-simplify-codebase-design.md` - Design for codebase simplification
+- `docs/plans/2026-03-13-simplify-codebase-implementation.md` - Implementation plan for codebase simplification
 
 ## Git Remote
 
