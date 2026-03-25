@@ -39,6 +39,11 @@
 					<string>timeliner</string>
 				</array>
 			</dict>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBackgroundName</key>
+				<string>DocumentIconBackground</string>
+			</dict>
 		</dict>
 	</array>
 </dict>
