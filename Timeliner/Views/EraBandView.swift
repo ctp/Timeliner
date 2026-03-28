@@ -23,24 +23,20 @@ struct EraBandView: View {
                     .frame(width: bandWidth, height: totalHeight)
                     .mask(fadeMask(width: bandWidth))
 
-                // Label — truncates and hides below a minimum width
-                if bandWidth >= 24 {
-                    Text(era.name)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(Color.primary.opacity(0.05))
-                        )
-                        .frame(maxWidth: bandWidth - 12)
-                        .frame(width: bandWidth, height: totalHeight, alignment: .top)
-                        .padding(.top, 4)
-                        .clipped()
-                }
+                // Label — centered on era, never truncated
+                Text(era.name)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        Capsule()
+                            .fill(Color.primary.opacity(0.05))
+                    )
+                    .frame(height: totalHeight, alignment: .top)
+                    .padding(.top, 4)
             }
             .position(x: startX + bandWidth / 2, y: totalHeight / 2)
         }
