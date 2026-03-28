@@ -227,10 +227,10 @@
             <property name="name" code="pnam" description="The era's display name." type="text" access="rw">
                 <cocoa key="name"/>
             </property>
-            <property name="start date" code="esdt" description="The start date as a precision-inferred string." type="text" access="rw">
+            <property name="era start date" code="esdt" description="The start date as a precision-inferred string." type="text" access="rw">
                 <cocoa key="startDateString"/>
             </property>
-            <property name="end date" code="eedt" description="The end date as a precision-inferred string." type="text" access="rw">
+            <property name="era end date" code="eedt" description="The end date as a precision-inferred string." type="text" access="rw">
                 <cocoa key="endDateString"/>
             </property>
             <property name="sort order" code="esrd" description="The display sort order (lower numbers appear first)." type="integer" access="rw">
