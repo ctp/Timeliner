@@ -63,11 +63,11 @@ class ScriptableEra: NSObject {
         guard let docSpecifier = doc.objectSpecifier else { return nil }
         guard let docClassDescription = NSScriptClassDescription(for: type(of: doc)) else { return nil }
 
-        return NSNameSpecifier(
+        return NSUniqueIDSpecifier(
             containerClassDescription: docClassDescription,
             containerSpecifier: docSpecifier,
             key: "eras",
-            name: era.name
+            uniqueID: era.id.uuidString
         )
     }
 }
