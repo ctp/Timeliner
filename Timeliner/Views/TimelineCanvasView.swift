@@ -51,21 +51,25 @@ struct TimelineCanvasView: View {
 
                 Divider()
 
+                // Era track — shown between axis and lanes when eras exist
+                if !eras.isEmpty {
+                    EraTrackView(
+                        eras: eras,
+                        viewport: viewportWithWidth(geometry.size.width),
+                        selectedEraID: selectedEraID,
+                        onSelectEra: { era in
+                            sidebarSelection = .era(era.id)
+                            selectedEventID = nil
+                        }
+                    )
+                    Divider()
+                }
+
                 // Lanes
                 ScrollView(.vertical, showsIndicators: true) {
 
                     ZStack(alignment: .topLeading) {
-                        // Era background bands (decorative background; accessible via sidebar)
                         GeometryReader { scrollGeo in
-                            ForEach(eras, id: \.id) { era in
-                                EraBandView(
-                                    era: era,
-                                    viewport: viewportWithWidth(geometry.size.width),
-                                    totalHeight: scrollGeo.size.height
-                                )
-                                .accessibilityHidden(true)
-                            }
-
                             // Today line — vertical accent-colored line at the current date
                             if showTodayLine {
                                 let todayX = viewportWithWidth(geometry.size.width).xPosition(for: Date())
@@ -144,12 +148,20 @@ struct TimelineCanvasView: View {
             }
             .onChange(of: geometry.size.width) { _, newWidth in
                 viewport.viewportWidth = newWidth
-            }
-            .onChange(of: fitToContent) { _, shouldFit in
-                if shouldFit {
-                    fitViewportToContent(width: geometry.size.width)
+                // If a fit was requested before geometry resolved, apply it now.
+                if fitToContent && newWidth > 0 {
+                    fitViewportToContent(width: newWidth)
                     fitToContent = false
                 }
+            }
+            .onChange(of: fitToContent) { _, shouldFit in
+                guard shouldFit else { return }
+                let w = geometry.size.width
+                if w > 0 {
+                    fitViewportToContent(width: w)
+                    fitToContent = false
+                }
+                // else: width not yet resolved — onChange(of: geometry.size.width) will pick it up
             }
         }
         .background(Color(nsColor: .textBackgroundColor))
@@ -162,6 +174,11 @@ struct TimelineCanvasView: View {
     private var selectedEvent: TimelineEvent? {
         guard let id = selectedEventID else { return nil }
         return allEvents.first { $0.id == id }
+    }
+
+    private var selectedEraID: UUID? {
+        if case .era(let id) = sidebarSelection { return id }
+        return nil
     }
 
     private func viewportWithWidth(_ width: CGFloat) -> TimelineViewport {
@@ -221,7 +238,7 @@ struct TimelineCanvasView: View {
     }
 
     private func fitViewportToContent(width: CGFloat) {
-        guard let bounds = eventDateBounds else { return }
+        guard width > 0, let bounds = eventDateBounds else { return }
 
         let rangeSeconds = bounds.latest.timeIntervalSince(bounds.earliest)
         // For point-only timelines (range == 0), show ±1 day around the point

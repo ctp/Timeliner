@@ -335,6 +335,49 @@ func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)], viewp
     return ConnectionLines(tracks: tracks, forkMerges: forkMerges)
 }
 
+// MARK: - Era Layout
+
+/// Assigns each era to a row using a greedy first-fit algorithm sorted by start date,
+/// so overlapping eras stack into separate rows without visual collision.
+func layoutEras(_ eras: [Era]) -> [(era: Era, row: Int)] {
+    // Unindexed eras first (start date ASC, end date ASC as tiebreaker),
+    // then indexed eras (displayIndex ASC).
+    let sorted = eras.sorted { a, b in
+        switch (a.displayIndex, b.displayIndex) {
+        case (nil, nil):
+            if a.startDate.asDate != b.startDate.asDate {
+                return a.startDate.asDate < b.startDate.asDate
+            }
+            return a.endDate.asDate < b.endDate.asDate
+        case (nil, _): return true
+        case (_, nil): return false
+        case (let ai, let bi): return ai! < bi!
+        }
+    }
+    var result: [(era: Era, row: Int)] = []
+    var rowEndDates: [Date] = []
+
+    for era in sorted {
+        let startDate = era.startDate.asDate
+        let endDate = era.endDate.asDate
+        if let rowIndex = rowEndDates.indices.first(where: { startDate >= rowEndDates[$0] }) {
+            rowEndDates[rowIndex] = endDate
+            result.append((era: era, row: rowIndex))
+        } else {
+            result.append((era: era, row: rowEndDates.count))
+            rowEndDates.append(endDate)
+        }
+    }
+    return result
+}
+
+/// Total height of the era track area for the given number of stacked collision rows.
+func eraTrackHeight(numRows: Int) -> CGFloat {
+    guard numRows > 0 else { return 0 }
+    return TimelineConstants.eraTrackPadding * 2
+        + TimelineConstants.eraTrackRowHeight * CGFloat(numRows)
+}
+
 // MARK: - ConnectionLinesShape
 
 struct ConnectionLinesShape: Shape {

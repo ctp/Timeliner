@@ -29,6 +29,7 @@ enum TimelineExporter {
         guard let (exportWidth, totalHeight, exportViewport) = computeExportGeometry(
             events: events,
             lanes: lanes,
+            eras: eras,
             showPointLabels: showPointLabels,
             viewport: viewport
         ) else {
@@ -89,6 +90,7 @@ enum TimelineExporter {
         guard let (exportWidth, totalHeight, exportViewport) = computeExportGeometry(
             events: events,
             lanes: lanes,
+            eras: eras,
             showPointLabels: showPointLabels,
             viewport: viewport
         ) else { return }
@@ -155,6 +157,7 @@ enum TimelineExporter {
     private static func computeExportGeometry(
         events: [TimelineEvent],
         lanes: [Lane],
+        eras: [Era],
         showPointLabels: Bool,
         viewport: TimelineViewport
     ) -> (exportWidth: CGFloat, totalHeight: CGFloat, viewport: TimelineViewport)? {
@@ -187,8 +190,11 @@ enum TimelineExporter {
             viewportWidth: exportWidth
         )
 
-        // Compute total height: axis + divider + lane rows
+        // Compute total height: axis + divider + era track (if any) + lane rows
         let axisHeight: CGFloat = 30 + 1  // TimeAxisView + Divider
+
+        let eraNumRows = (layoutEras(eras).map(\.row).max() ?? -1) + 1
+        let eraHeight: CGFloat = eras.isEmpty ? 0 : eraTrackHeight(numRows: eraNumRows) + 1  // +1 for divider
 
         let laneEvents = events.filter { $0.lane != nil }
         let unassigned = events.filter { $0.lane == nil }
@@ -214,7 +220,7 @@ enum TimelineExporter {
         let laneCount = lanes.count + (unassigned.isEmpty ? 0 : 1)
         let spacingHeight = CGFloat(max(0, laneCount - 1)) * 1
 
-        let totalHeight = axisHeight + lanesHeight + spacingHeight
+        let totalHeight = axisHeight + eraHeight + lanesHeight + spacingHeight
 
         return (exportWidth, totalHeight, exportViewport)
     }
@@ -234,11 +240,6 @@ private struct TimelineExportView: View {
     let exportWidth: CGFloat
     let totalHeight: CGFloat
 
-    // Pre-computed lane heights so the ZStack background fills correctly
-    private var laneAreaHeight: CGFloat {
-        totalHeight - 30 - 1  // minus axis and divider
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             // Time ruler
@@ -246,36 +247,35 @@ private struct TimelineExportView: View {
 
             Divider()
 
-            // Lanes + era bands
-            ZStack(alignment: .topLeading) {
-                // Era background bands
-                ForEach(eras, id: \.id) { era in
-                    EraBandView(
-                        era: era,
+            // Era track (matches live canvas layout)
+            if !eras.isEmpty {
+                EraTrackView(
+                    eras: eras,
+                    viewport: viewport,
+                    selectedEraID: nil,
+                    onSelectEra: { _ in }
+                )
+                Divider()
+            }
+
+            // Lane rows
+            VStack(spacing: 1) {
+                ForEach(lanes, id: \.id) { lane in
+                    LaneRowView(
+                        lane: lane,
                         viewport: viewport,
-                        totalHeight: laneAreaHeight
+                        showPointLabels: showPointLabels
                     )
                 }
 
-                // Lane rows
-                VStack(spacing: 1) {
-                    ForEach(lanes, id: \.id) { lane in
-                        LaneRowView(
-                            lane: lane,
-                            viewport: viewport,
-                            showPointLabels: showPointLabels
-                        )
-                    }
-
-                    // Unassigned events
-                    let unassigned = events.filter { $0.lane == nil }
-                    if !unassigned.isEmpty {
-                        UnassignedLaneRowView(
-                            events: unassigned,
-                            viewport: viewport,
-                            showPointLabels: showPointLabels
-                        )
-                    }
+                // Unassigned events
+                let unassigned = events.filter { $0.lane == nil }
+                if !unassigned.isEmpty {
+                    UnassignedLaneRowView(
+                        events: unassigned,
+                        viewport: viewport,
+                        showPointLabels: showPointLabels
+                    )
                 }
             }
         }

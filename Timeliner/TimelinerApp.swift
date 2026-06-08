@@ -12,7 +12,7 @@ struct TimelinerApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: TimelinerAppDelegate
 
     var body: some Scene {
-        DocumentGroup(editing: .timelinerDocument, migrationPlan: TimelinerMigrationPlan.self) {
+        DocumentGroup(editing: [TimelineEvent.self, Lane.self, Era.self], contentType: .timelinerDocument) {
             ContentView()
         }
         .commands {
@@ -107,33 +107,3 @@ extension UTType {
     }
 }
 
-struct TimelinerMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [VersionedSchema.Type] = [
-        TimelinerVersionedSchemaV1.self,
-        TimelinerVersionedSchema.self,
-    ]
-
-    static var stages: [MigrationStage] = [
-        .lightweight(fromVersion: TimelinerVersionedSchemaV1.self,
-                     toVersion: TimelinerVersionedSchema.self),
-    ]
-}
-
-struct TimelinerVersionedSchemaV1: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 0, 0)
-
-    static var models: [any PersistentModel.Type] = [
-        TimelineEvent.self,
-        Lane.self,
-    ]
-}
-
-struct TimelinerVersionedSchema: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 1, 0)
-
-    static var models: [any PersistentModel.Type] = [
-        TimelineEvent.self,
-        Lane.self,
-        Era.self,
-    ]
-}

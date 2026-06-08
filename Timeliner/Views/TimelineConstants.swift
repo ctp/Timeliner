@@ -41,4 +41,15 @@ enum TimelineConstants {
     /// Diameter of the small lane-color indicator circles shown in the
     /// sidebar and inspector (points).
     static let laneColorCircleSize: CGFloat = 12
+
+    // MARK: - Era Track
+
+    /// Height of one collision row in the era track header area.
+    static let eraTrackRowHeight: CGFloat = 22
+    /// Top and bottom padding inside the era track.
+    static let eraTrackPadding: CGFloat = 4
+    /// Stroke width of era horizontal lines and vertical caps.
+    static let eraLineThickness: CGFloat = 1.5
+    /// Total height of start/end vertical cap lines.
+    static let eraCapHeight: CGFloat = 10
 }

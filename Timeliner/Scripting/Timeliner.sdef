@@ -236,6 +236,11 @@
             <property name="sort order" code="esrd" description="The display sort order (lower numbers appear first)." type="integer" access="rw">
                 <cocoa key="sortOrder"/>
             </property>
+            <property name="display index" code="eDxi" description="Optional render order index. Eras without an index render first (sorted by date); indexed eras render below them in ascending index order. Set to missing value to clear." access="rw">
+                <cocoa key="displayIndex"/>
+                <type type="integer"/>
+                <type type="missing value"/>
+            </property>
         </class>
 
     </suite>
