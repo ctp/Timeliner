@@ -339,21 +339,18 @@ func computeConnectionLines(layout: [(event: TimelineEvent, subRow: Int)], viewp
 
 /// Assigns each era to a row using a greedy first-fit algorithm sorted by start date,
 /// so overlapping eras stack into separate rows without visual collision.
+///
+/// sortOrder == 0 means unindexed (sorted by start date, then end date);
+/// sortOrder > 0 means explicitly indexed (sorted by sortOrder, placed after unindexed eras).
 func layoutEras(_ eras: [Era]) -> [(era: Era, row: Int)] {
-    // Unindexed eras first (start date ASC, end date ASC as tiebreaker),
-    // then indexed eras (displayIndex ASC).
-    let sorted = eras.sorted { a, b in
-        switch (a.displayIndex, b.displayIndex) {
-        case (nil, nil):
-            if a.startDate.asDate != b.startDate.asDate {
-                return a.startDate.asDate < b.startDate.asDate
-            }
-            return a.endDate.asDate < b.endDate.asDate
-        case (nil, _): return true
-        case (_, nil): return false
-        case (let ai, let bi): return ai! < bi!
+    let unindexed = eras.filter { $0.sortOrder == 0 }.sorted { a, b in
+        if a.startDate.asDate != b.startDate.asDate {
+            return a.startDate.asDate < b.startDate.asDate
         }
+        return a.endDate.asDate < b.endDate.asDate
     }
+    let indexed = eras.filter { $0.sortOrder > 0 }.sorted { $0.sortOrder < $1.sortOrder }
+    let sorted = unindexed + indexed
     var result: [(era: Era, row: Int)] = []
     var rowEndDates: [Date] = []
 

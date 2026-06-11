@@ -33,12 +33,34 @@ enum DatePrecision: Int, Codable, Comparable, CaseIterable {
 /// - Time precision: hour and minute are stored as **UTC**. Use `fromLocalTime(...)` to
 ///   create time-precision dates from local input — it handles the local→UTC conversion.
 ///   Use `localDisplayComponents` to convert back to local time for display.
-struct FlexibleDate: Codable, Hashable, Sendable {
+struct FlexibleDate: Codable, Sendable {
     let year: Int
     let month: Int?
     let day: Int?
     let hour: Int?
     let minute: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case year, month, day, hour, minute
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        year = try c.decode(Int.self, forKey: .year)
+        month = try c.decodeIfPresent(Int.self, forKey: .month)
+        day = try c.decodeIfPresent(Int.self, forKey: .day)
+        hour = try c.decodeIfPresent(Int.self, forKey: .hour)
+        minute = try c.decodeIfPresent(Int.self, forKey: .minute)
+    }
+
+    nonisolated func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(year, forKey: .year)
+        try c.encodeIfPresent(month, forKey: .month)
+        try c.encodeIfPresent(day, forKey: .day)
+        try c.encodeIfPresent(hour, forKey: .hour)
+        try c.encodeIfPresent(minute, forKey: .minute)
+    }
 
     init(year: Int, month: Int? = nil, day: Int? = nil, hour: Int? = nil, minute: Int? = nil) {
         self.year = year
@@ -147,6 +169,26 @@ struct FlexibleDate: Codable, Hashable, Sendable {
             hour: hour ?? 0,
             minute: minute ?? 0
         )
+    }
+}
+
+extension FlexibleDate: Equatable {
+    nonisolated static func == (lhs: FlexibleDate, rhs: FlexibleDate) -> Bool {
+        lhs.year == rhs.year &&
+        lhs.month == rhs.month &&
+        lhs.day == rhs.day &&
+        lhs.hour == rhs.hour &&
+        lhs.minute == rhs.minute
+    }
+}
+
+extension FlexibleDate: Hashable {
+    nonisolated func hash(into hasher: inout Hasher) {
+        hasher.combine(year)
+        hasher.combine(month)
+        hasher.combine(day)
+        hasher.combine(hour)
+        hasher.combine(minute)
     }
 }
 

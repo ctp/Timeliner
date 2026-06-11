@@ -233,13 +233,8 @@
             <property name="era end date" code="eedt" description="The end date as a precision-inferred string." type="text" access="rw">
                 <cocoa key="endDateString"/>
             </property>
-            <property name="sort order" code="esrd" description="The display sort order (lower numbers appear first)." type="integer" access="rw">
+            <property name="sort order" code="esrd" description="The display sort order. 0 means unindexed (sorted by date); values greater than 0 are explicit display indices (rendered after unindexed eras, in ascending order)." type="integer" access="rw">
                 <cocoa key="sortOrder"/>
-            </property>
-            <property name="display index" code="eDxi" description="Optional render order index. Eras without an index render first (sorted by date); indexed eras render below them in ascending index order. Set to missing value to clear." access="rw">
-                <cocoa key="displayIndex"/>
-                <type type="integer"/>
-                <type type="missing value"/>
             </property>
         </class>
 

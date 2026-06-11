@@ -56,11 +56,6 @@ class ScriptableEra: NSObject {
         set { era.sortOrder = newValue }
     }
 
-    @objc var displayIndex: NSNumber? {
-        get { era.displayIndex.map { NSNumber(value: $0) } }
-        set { era.displayIndex = newValue?.intValue }
-    }
-
     // MARK: - Object Specifier
 
     override var objectSpecifier: NSScriptObjectSpecifier? {

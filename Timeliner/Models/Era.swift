@@ -11,7 +11,6 @@ final class Era {
     @Attribute(.unique) var id: UUID
     var name: String
     var sortOrder: Int
-    var displayIndex: Int?
 
     private var startDateData: Data
     private var endDateData: Data
