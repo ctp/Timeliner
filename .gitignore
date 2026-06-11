@@ -66,3 +66,7 @@ fastlane/test_output
 
 # Git worktrees
 .worktrees/
+
+# SwiftData/SQLite transient files inside .timeliner document packages
+*.timeliner/StoreContent-shm
+*.timeliner/StoreContent-wal
